@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sigmoid, predict, train } from './logisticRegression.js';
+import { sigmoid, predict, train, accuracy } from './logisticRegression.js';
 
 // Normal cases
 test('sigmoid returns 0.5 when input is 0', () => {
@@ -315,4 +315,143 @@ test('train rejects non-number feature values', () => {
     assert.throws(() => train([['1']], [1]), TypeError);
     assert.throws(() => train([[null]], [1]), TypeError);
     assert.throws(() => train([[NaN]], [1]), TypeError);
+});
+
+// accuracy: normal cases
+test('accuracy returns 1 for a model that gets everything right', () => {
+    // 10x - 25: negative for 0-2, positive for 3-5
+    const model = { weights: [10], bias: -25 };
+    assert.equal(accuracy(simpleX, simpleY, model), 1);
+});
+
+test('accuracy returns 0 for a model that gets everything wrong', () => {
+    const model = { weights: [-10], bias: 25 };
+    assert.equal(accuracy(simpleX, simpleY, model), 0);
+});
+
+test('accuracy returns the right fraction for partly correct guesses', () => {
+    // Always predicts 1 (prob 0.5 >= 0.5), so it gets 2 of 3 right
+    const model = { weights: [0], bias: 0 };
+    const result = accuracy([[1], [2], [3]], [1, 1, 0], model);
+    assert.ok(Math.abs(result - 2 / 3) < 1e-10);
+});
+
+test('accuracy works with the output of train', () => {
+    const model = train(simpleX, simpleY, { learningRate: 0.5, epochs: 3000 });
+    assert.equal(accuracy(simpleX, simpleY, model), 1);
+});
+
+test('accuracy works with multiple features', () => {
+    const model = { weights: [1, 0], bias: -5 };
+    const X = [[0, 9], [2, 9], [8, 0], [10, 0]];
+    const y = [0, 0, 1, 1];
+    assert.equal(accuracy(X, y, model), 1);
+});
+
+test('accuracy always returns a value between 0 and 1', () => {
+    const model = { weights: [0.3], bias: -1 };
+    const result = accuracy(simpleX, simpleY, model);
+    assert.ok(result >= 0 && result <= 1);
+});
+
+// accuracy: threshold behavior
+test('a probability exactly at the threshold counts as 1', () => {
+    // prob is exactly 0.5
+    const model = { weights: [0], bias: 0 };
+    assert.equal(accuracy([[0]], [1], model, 0.5), 1);
+    assert.equal(accuracy([[0]], [0], model, 0.5), 0);
+});
+
+test('changing the threshold changes the guesses', () => {
+    const model = { weights: [0], bias: 0 }; // prob 0.5
+    assert.equal(accuracy([[0]], [0], model, 0.6), 1);
+    assert.equal(accuracy([[0]], [0], model, 0.4), 0);
+});
+
+test('threshold of 0 guesses 1 for everything', () => {
+    const model = { weights: [-5], bias: 0 };
+    assert.equal(accuracy([[1], [2]], [1, 1], model, 0), 1);
+});
+
+test('accuracy uses 0.5 as the default threshold', () => {
+    const model = { weights: [0.3], bias: -1 };
+    assert.equal(
+        accuracy(simpleX, simpleY, model),
+        accuracy(simpleX, simpleY, model, 0.5)
+    );
+});
+
+// accuracy: boundary and large inputs
+test('accuracy works with a single example', () => {
+    const model = { weights: [1], bias: 0 };
+    assert.equal(accuracy([[5]], [1], model), 1);
+});
+
+test('accuracy handles 1000+ examples', () => {
+    const X = [];
+    const y = [];
+    for (let i = 0; i < 1500; i++) {
+        X.push([i % 10]);
+        y.push(i % 10 >= 5 ? 1 : 0);
+    }
+    const model = { weights: [10], bias: -45 };
+    assert.equal(accuracy(X, y, model), 1);
+});
+
+test('accuracy does not change the inputs', () => {
+    const X = [[1], [2]];
+    const y = [0, 1];
+    const model = { weights: [1], bias: 0 };
+    accuracy(X, y, model);
+    assert.deepEqual(X, [[1], [2]]);
+    assert.deepEqual(y, [0, 1]);
+    assert.deepEqual(model, { weights: [1], bias: 0 });
+});
+
+// accuracy: error handling
+test('accuracy rejects non-array X or y', () => {
+    const model = { weights: [1], bias: 0 };
+    assert.throws(() => accuracy('abc', [0], model), TypeError);
+    assert.throws(() => accuracy([[1]], null, model), TypeError);
+    assert.throws(() => accuracy(undefined, [0], model), TypeError);
+});
+
+test('accuracy rejects empty or mismatched X and y', () => {
+    const model = { weights: [1], bias: 0 };
+    assert.throws(() => accuracy([], [], model), Error);
+    assert.throws(() => accuracy([[1], [2]], [0], model), Error);
+});
+
+test('accuracy rejects y values that are not 0 or 1', () => {
+    const model = { weights: [1], bias: 0 };
+    assert.throws(() => accuracy([[1]], [2], model), Error);
+    assert.throws(() => accuracy([[1]], ['1'], model), Error);
+    assert.throws(() => accuracy([[1]], [true], model), Error);
+    assert.throws(() => accuracy([[1]], [null], model), Error);
+});
+
+test('accuracy rejects a missing or bad model', () => {
+    assert.throws(() => accuracy([[1]], [1], null), TypeError);
+    assert.throws(() => accuracy([[1]], [1], undefined), TypeError);
+    assert.throws(() => accuracy([[1]], [1], {}), TypeError);
+    assert.throws(() => accuracy([[1]], [1], { weights: 'abc', bias: 0 }), TypeError);
+});
+
+test('accuracy rejects a model with a missing or bad bias', () => {
+    assert.throws(() => accuracy([[1]], [1], { weights: [1] }), TypeError);
+    assert.throws(() => accuracy([[1]], [1], { weights: [1], bias: '0' }), TypeError);
+});
+
+test('accuracy rejects rows that do not match the number of weights', () => {
+    const model = { weights: [1, 2], bias: 0 };
+    assert.throws(() => accuracy([[1]], [1], model), Error);
+});
+
+test('accuracy rejects invalid thresholds', () => {
+    const model = { weights: [1], bias: 0 };
+    assert.throws(() => accuracy([[1]], [1], model, -0.1), TypeError);
+    assert.throws(() => accuracy([[1]], [1], model, 1.1), TypeError);
+    assert.throws(() => accuracy([[1]], [1], model, NaN), TypeError);
+    assert.throws(() => accuracy([[1]], [1], model, '0.5'), TypeError);
+    assert.throws(() => accuracy([[1]], [1], model, null), TypeError);
 });

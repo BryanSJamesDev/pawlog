@@ -139,3 +139,60 @@ export function train(X, y, options = {}) {
     // Return the trained model
     return { weights, bias };
 }
+
+/**
+ * Calculates the accuracy of a trained logistic regression model.
+ *
+ * @param {number[][]} X - Training examples and their features
+ * @param {number[]} y - Actual answers (0 or 1)
+ * @param {{weights: number[], bias: number}} model - Trained model
+ * @param {number} threshold - Probability cutoff for predictions
+ * @returns {number} Accuracy as a fraction between 0 and 1
+ */
+export function accuracy(X, y, model, threshold = 0.5) {
+    // Check that X and y are arrays
+    if (!Array.isArray(X) || !Array.isArray(y)) {
+        throw new TypeError('X and y must be arrays');
+    }
+
+    // Check that X and y are not empty and have the same length
+    if (X.length === 0 || y.length === 0 || X.length !== y.length) {
+        throw new Error('X and y must have the same non-empty length');
+    }
+
+    // Check that every answer is either 0 or 1
+    for (let i = 0; i < y.length; i++) {
+        if (y[i] !== 0 && y[i] !== 1) {
+            throw new Error('All y values must be 0 or 1');
+        }
+    }
+
+    // Check that the model has a weights array
+    if (!model || !Array.isArray(model.weights)) {
+        throw new TypeError('Model must contain a weights array');
+    }
+
+    // Check that threshold is a finite number between 0 and 1
+    if (typeof threshold !== 'number' ||
+        !Number.isFinite(threshold) ||
+        threshold < 0 ||
+        threshold > 1) {
+        throw new TypeError('Threshold must be a finite number between 0 and 1');
+    }
+
+    // Count the number of correct predictions
+    let correct = 0;
+
+    for (let i = 0; i < X.length; i++) {
+        const probability = predict(X[i], model.weights, model.bias);
+
+        const guess = probability >= threshold ? 1 : 0;
+
+        if (guess === y[i]) {
+            correct++;
+        }
+    }
+
+    // Return accuracy as a fraction
+    return correct / X.length;
+}
