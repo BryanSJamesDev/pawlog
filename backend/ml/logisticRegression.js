@@ -196,3 +196,80 @@ export function accuracy(X, y, model, threshold = 0.5) {
     // Return accuracy as a fraction
     return correct / X.length;
 }
+
+/**
+ * Splits data into training and testing sets after shuffling the indices.
+ *
+ * @param {number[][]} X - Input features
+ * @param {number[]} y - Actual answers (0 or 1)
+ * @param {number} testRatio - Fraction of data reserved for testing
+ * @param {Function} random - Random number generator used for shuffling
+ * @returns {{XTrain: number[][], yTrain: number[], XTest: number[][], yTest: number[]}}
+ */
+export function trainTestSplit(X, y, testRatio = 0.2, random = Math.random) {
+    // Check that X and y are arrays
+    if (!Array.isArray(X) || !Array.isArray(y)) {
+        throw new TypeError('X and y must be arrays');
+    }
+
+    // Check that X and y have the same length
+    if (X.length !== y.length) {
+        throw new Error('X and y must have the same length');
+    }
+
+    // Check that there are at least 2 examples
+    if (X.length < 2) {
+        throw new Error('At least 2 examples are required');
+    }
+
+    // Check that testRatio is a finite number between 0 and 1
+    if (typeof testRatio !== 'number' ||
+        !Number.isFinite(testRatio) ||
+        testRatio <= 0 ||
+        testRatio >= 1) {
+        throw new TypeError('Test ratio must be a finite number between 0 and 1');
+    }
+
+    // Check that random is a function
+    if (typeof random !== 'function') {
+        throw new TypeError('Random must be a function');
+    }
+
+    // Get the number of examples
+    const m = X.length;
+
+    // Calculate how many examples go into the test set
+    let testCount = Math.round(m * testRatio);
+
+    // Make sure both sets contain at least one example
+    testCount = Math.max(1, Math.min(testCount, m - 1));
+
+    // Create an array of indices
+    const indices = Array.from({ length: m }, (_, i) => i);
+
+    // Shuffle indices using Fisher-Yates
+    for (let i = m - 1; i > 0; i--) {
+        const r = random();
+        if (typeof r !== 'number' || !(r >= 0 && r < 1)) {
+            throw new TypeError('Random must return a number from 0 up to (not including) 1');
+        }
+        const j = Math.floor(r * (i + 1));
+
+        // Swap the current index with a random index
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    // Separate test and training indices
+    const testIndices = indices.slice(0, testCount);
+    const trainIndices = indices.slice(testCount);
+
+    // Build the training and testing datasets
+    const XTest = testIndices.map(i => X[i]);
+    const yTest = testIndices.map(i => y[i]);
+
+    const XTrain = trainIndices.map(i => X[i]);
+    const yTrain = trainIndices.map(i => y[i]);
+
+    // Return both datasets
+    return { XTrain, yTrain, XTest, yTest };
+}

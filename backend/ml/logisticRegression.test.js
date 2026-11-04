@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sigmoid, predict, train, accuracy } from './logisticRegression.js';
+import { sigmoid, predict, train, accuracy, trainTestSplit } from './logisticRegression.js';
 
 // Normal cases
 test('sigmoid returns 0.5 when input is 0', () => {
@@ -454,4 +454,175 @@ test('accuracy rejects invalid thresholds', () => {
     assert.throws(() => accuracy([[1]], [1], model, NaN), TypeError);
     assert.throws(() => accuracy([[1]], [1], model, '0.5'), TypeError);
     assert.throws(() => accuracy([[1]], [1], model, null), TypeError);
+});
+
+// trainTestSplit: shared test data
+// Each row is [i] and its answer is i % 2, so we can check pairs stay together
+function makeData(m) {
+    const X = [];
+    const y = [];
+    for (let i = 0; i < m; i++) {
+        X.push([i]);
+        y.push(i % 2);
+    }
+    return { X, y };
+}
+
+// Fake random that never swaps (j always equals i), so order stays the same
+const noShuffle = () => 0.999999;
+
+// trainTestSplit: normal cases
+test('trainTestSplit makes the right sizes with the default ratio', () => {
+    const { X, y } = makeData(10);
+    const split = trainTestSplit(X, y);
+    assert.equal(split.XTest.length, 2);
+    assert.equal(split.yTest.length, 2);
+    assert.equal(split.XTrain.length, 8);
+    assert.equal(split.yTrain.length, 8);
+});
+
+test('trainTestSplit uses a custom ratio', () => {
+    const { X, y } = makeData(10);
+    const split = trainTestSplit(X, y, 0.3);
+    assert.equal(split.XTest.length, 3);
+    assert.equal(split.XTrain.length, 7);
+});
+
+test('every example ends up in exactly one set', () => {
+    const { X, y } = makeData(20);
+    const split = trainTestSplit(X, y);
+    const all = [...split.XTrain, ...split.XTest].map(row => row[0]).sort((a, b) => a - b);
+    assert.deepEqual(all, X.map(row => row[0]));
+});
+
+test('rows stay paired with their answers', () => {
+    const { X, y } = makeData(50);
+    const split = trainTestSplit(X, y);
+    split.XTrain.forEach((row, i) => assert.equal(split.yTrain[i], row[0] % 2));
+    split.XTest.forEach((row, i) => assert.equal(split.yTest[i], row[0] % 2));
+});
+
+test('with no shuffling, the test set is the first rows', () => {
+    const { X, y } = makeData(10);
+    const split = trainTestSplit(X, y, 0.2, noShuffle);
+    assert.deepEqual(split.XTest, [[0], [1]]);
+    assert.deepEqual(split.yTest, [0, 1]);
+    assert.deepEqual(split.XTrain, X.slice(2));
+});
+
+test('the same fake random gives the same split every time', () => {
+    const { X, y } = makeData(15);
+    const fake = () => 0.3;
+    assert.deepEqual(trainTestSplit(X, y, 0.2, fake), trainTestSplit(X, y, 0.2, fake));
+});
+
+test('shuffling mixes ordered data into the test set', () => {
+    // First half all 0s, second half all 1s
+    const X = [];
+    const y = [];
+    for (let i = 0; i < 1000; i++) {
+        X.push([i]);
+        y.push(i < 500 ? 0 : 1);
+    }
+    const { yTest } = trainTestSplit(X, y);
+    assert.ok(yTest.includes(0));
+    assert.ok(yTest.includes(1));
+});
+
+test('trainTestSplit does not change the inputs', () => {
+    const { X, y } = makeData(10);
+    const XCopy = X.map(row => [...row]);
+    const yCopy = [...y];
+    trainTestSplit(X, y);
+    assert.deepEqual(X, XCopy);
+    assert.deepEqual(y, yCopy);
+});
+
+test('trainTestSplit output works with train and accuracy', () => {
+    const X = [];
+    const y = [];
+    for (let i = 0; i < 200; i++) {
+        X.push([i % 10]);
+        y.push(i % 10 >= 5 ? 1 : 0);
+    }
+    const { XTrain, yTrain, XTest, yTest } = trainTestSplit(X, y);
+    const model = train(XTrain, yTrain, { learningRate: 0.5, epochs: 2000 });
+    assert.ok(accuracy(XTest, yTest, model) > 0.9);
+});
+
+// trainTestSplit: boundary and large inputs
+test('trainTestSplit works with exactly 2 examples', () => {
+    const split = trainTestSplit([[1], [2]], [0, 1]);
+    assert.equal(split.XTest.length, 1);
+    assert.equal(split.XTrain.length, 1);
+});
+
+test('a tiny ratio still puts at least 1 example in the test set', () => {
+    const { X, y } = makeData(10);
+    const split = trainTestSplit(X, y, 0.01);
+    assert.equal(split.XTest.length, 1);
+    assert.equal(split.XTrain.length, 9);
+});
+
+test('a huge ratio still leaves at least 1 example for training', () => {
+    const { X, y } = makeData(10);
+    const split = trainTestSplit(X, y, 0.99);
+    assert.equal(split.XTest.length, 9);
+    assert.equal(split.XTrain.length, 1);
+});
+
+test('trainTestSplit rounds the test size', () => {
+    const { X, y } = makeData(7);
+    const split = trainTestSplit(X, y, 0.5); // 3.5 rounds to 4
+    assert.equal(split.XTest.length, 4);
+    assert.equal(split.XTrain.length, 3);
+});
+
+test('trainTestSplit handles 10000 examples', () => {
+    const { X, y } = makeData(10000);
+    const split = trainTestSplit(X, y);
+    assert.equal(split.XTest.length, 2000);
+    assert.equal(split.XTrain.length, 8000);
+});
+
+// trainTestSplit: error handling
+test('trainTestSplit rejects non-array X or y', () => {
+    assert.throws(() => trainTestSplit('abc', [0, 1]), TypeError);
+    assert.throws(() => trainTestSplit([[1], [2]], null), TypeError);
+    assert.throws(() => trainTestSplit(undefined, [0, 1]), TypeError);
+});
+
+test('trainTestSplit rejects mismatched lengths', () => {
+    assert.throws(() => trainTestSplit([[1], [2], [3]], [0, 1]), Error);
+});
+
+test('trainTestSplit rejects fewer than 2 examples', () => {
+    assert.throws(() => trainTestSplit([], []), Error);
+    assert.throws(() => trainTestSplit([[1]], [0]), Error);
+});
+
+test('trainTestSplit rejects invalid ratios', () => {
+    const { X, y } = makeData(10);
+    assert.throws(() => trainTestSplit(X, y, 0), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 1), TypeError);
+    assert.throws(() => trainTestSplit(X, y, -0.2), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 1.5), TypeError);
+    assert.throws(() => trainTestSplit(X, y, NaN), TypeError);
+    assert.throws(() => trainTestSplit(X, y, '0.2'), TypeError);
+    assert.throws(() => trainTestSplit(X, y, null), TypeError);
+});
+
+test('trainTestSplit rejects a random that is not a function', () => {
+    const { X, y } = makeData(10);
+    assert.throws(() => trainTestSplit(X, y, 0.2, 'abc'), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 0.2, 5), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 0.2, null), TypeError);
+});
+
+test('trainTestSplit rejects a random that returns bad values', () => {
+    const { X, y } = makeData(10);
+    assert.throws(() => trainTestSplit(X, y, 0.2, () => 1), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 0.2, () => -0.1), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 0.2, () => NaN), TypeError);
+    assert.throws(() => trainTestSplit(X, y, 0.2, () => '0.5'), TypeError);
 });
