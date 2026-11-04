@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomBetween, makePet } from './generateEntries.js';
+import { randomBetween, makePet, makeDay } from './generateEntries.js';
+import { SYMPTOMS, extractFeatures } from '../ml/features.js';
 
 // Fake random that always returns the same value
 const always = (value) => () => value;
@@ -164,4 +165,188 @@ test('makePet rejects invalid indexes', () => {
     assert.throws(() => makePet(NaN), TypeError);
     assert.throws(() => makePet(Infinity), TypeError);
     assert.throws(() => makePet(), TypeError);
+});
+
+// makeDay: shared test data
+const testPet = {
+    petName: 'Luna',
+    petSpecies: 'dog',
+    userId: 'seed-user-1',
+    normal: { food: 3, water: 4, activity: 60, weight: 50 },
+};
+const testDate = new Date('2026-11-01');
+
+function assertNear(actual, expected) {
+    assert.ok(Math.abs(actual - expected) < 1e-9, `expected ${expected}, got ${actual}`);
+}
+
+// makeDay: normal cases
+test('makeDay healthy day at the middle of the range matches normal', () => {
+    // random 0.5 gives a 1.0x change, and 0.5 is not below 0.05, so no symptom
+    const day = makeDay(testPet, testDate, false, always(0.5));
+    assertNear(day.food, 3);
+    assertNear(day.water, 4);
+    assert.equal(day.activity, 60);
+    assertNear(day.weight, 50);
+    assert.deepEqual(day.symptoms, []);
+    assert.equal(day.needsAttention, false);
+});
+
+test('makeDay healthy day at the low end is 90% of normal with one symptom', () => {
+    // random 0 gives 0.9x, and 0 is below 0.05, so one symptom at index 0
+    const day = makeDay(testPet, testDate, false, always(0));
+    assertNear(day.food, 2.7);
+    assertNear(day.water, 3.6);
+    assert.equal(day.activity, 54);
+    assertNear(day.weight, 45);
+    assert.deepEqual(day.symptoms, ['not eating']);
+});
+
+test('makeDay sick day matches hand-worked values', () => {
+    // food 3*0.5, water 4*0.95, activity 60*0.45, weight 50*0.985
+    // 0.5 is not below 0.5, so 2 symptoms starting at index 2
+    const day = makeDay(testPet, testDate, true, always(0.5));
+    assertNear(day.food, 1.5);
+    assertNear(day.water, 3.8);
+    assert.equal(day.activity, 27);
+    assertNear(day.weight, 49.25);
+    assert.deepEqual(day.symptoms, ['diarrhea', 'low energy']);
+    assert.equal(day.needsAttention, true);
+});
+
+test('makeDay sick day at the low end has one symptom', () => {
+    const day = makeDay(testPet, testDate, true, always(0));
+    assertNear(day.food, 0.9);
+    assertNear(day.water, 2.4);
+    assert.equal(day.activity, 18);
+    assertNear(day.weight, 48.5);
+    assert.deepEqual(day.symptoms, ['not eating']);
+});
+
+test('makeDay wraps around the symptom list for the second symptom', () => {
+    // start = floor(0.9 * 5) = 4 (coughing), next wraps to 0 (not eating)
+    const day = makeDay(testPet, testDate, true, always(0.9));
+    assert.deepEqual(day.symptoms, ['coughing', 'not eating']);
+});
+
+test('makeDay copies the pet info and date into the entry', () => {
+    const day = makeDay(testPet, testDate, false);
+    assert.equal(day.petName, 'Luna');
+    assert.equal(day.petSpecies, 'dog');
+    assert.equal(day.userId, 'seed-user-1');
+    assert.equal(day.date.getTime(), testDate.getTime());
+    assert.equal(day.predictedProbability, null);
+});
+
+test('makeDay returns every field in the entries schema', () => {
+    const day = makeDay(testPet, testDate, false);
+    assert.deepEqual(Object.keys(day).sort(), [
+        'activity', 'date', 'food', 'needsAttention', 'petName', 'petSpecies',
+        'predictedProbability', 'symptoms', 'userId', 'water', 'weight',
+    ]);
+});
+
+test('makeDay rounds food, water, and weight to 2 decimals and activity to whole numbers', () => {
+    const pet = { ...testPet, normal: { food: 1 / 3, water: 2 / 3, activity: 33.7, weight: 10 / 3 } };
+    const day = makeDay(pet, testDate, false, always(0.5));
+    assert.equal(day.food, 0.33);
+    assert.equal(day.water, 0.67);
+    assert.equal(day.activity, 34);
+    assert.equal(day.weight, 3.33);
+});
+
+test('healthy days stay within 90% to 110% of normal', () => {
+    for (let i = 0; i < 500; i++) {
+        const day = makeDay(testPet, testDate, false);
+        assert.ok(day.food >= 2.7 - 0.01 && day.food <= 3.3 + 0.01);
+        assert.ok(day.activity >= 54 && day.activity <= 66);
+    }
+});
+
+test('sick days have much lower food and activity', () => {
+    for (let i = 0; i < 500; i++) {
+        const day = makeDay(testPet, testDate, true);
+        assert.ok(day.food >= 0.9 - 0.01 && day.food <= 2.1 + 0.01);
+        assert.ok(day.activity >= 18 && day.activity <= 36);
+    }
+});
+
+test('healthy days have 0 or 1 symptoms and sick days have 1 or 2', () => {
+    for (let i = 0; i < 500; i++) {
+        const healthy = makeDay(testPet, testDate, false);
+        const sick = makeDay(testPet, testDate, true);
+        assert.ok(healthy.symptoms.length <= 1);
+        assert.ok(sick.symptoms.length >= 1 && sick.symptoms.length <= 2);
+    }
+});
+
+test('makeDay symptoms are always from the list, lowercase, and not repeated', () => {
+    for (let i = 0; i < 500; i++) {
+        const { symptoms } = makeDay(testPet, testDate, true);
+        assert.equal(new Set(symptoms).size, symptoms.length);
+        for (const s of symptoms) {
+            assert.ok(SYMPTOMS.includes(s));
+        }
+    }
+});
+
+test('makeDay output works with extractFeatures', () => {
+    const past = [makeDay(testPet, new Date('2026-10-31'), false)];
+    const today = makeDay(testPet, testDate, true);
+    assert.equal(extractFeatures(today, past).length, 10);
+});
+
+test('makeDay does not change the pet', () => {
+    const pet = { ...testPet, normal: { ...testPet.normal } };
+    makeDay(pet, testDate, true);
+    assert.deepEqual(pet, testPet);
+});
+
+// makeDay: boundary and large inputs
+test('makeDay handles zero normal values', () => {
+    const pet = { ...testPet, normal: { food: 0, water: 0, activity: 0, weight: 0 } };
+    const day = makeDay(pet, testDate, true, always(0.5));
+    assert.equal(day.food, 0);
+    assert.equal(day.activity, 0);
+});
+
+test('makeDay handles very large normal values', () => {
+    const pet = { ...testPet, normal: { food: 1e6, water: 1e6, activity: 1e6, weight: 1e6 } };
+    const day = makeDay(pet, testDate, false, always(0.5));
+    assert.equal(day.food, 1e6);
+    assert.equal(day.activity, 1e6);
+});
+
+// makeDay: error handling
+test('makeDay rejects a missing or bad pet', () => {
+    assert.throws(() => makeDay(null, testDate, false), TypeError);
+    assert.throws(() => makeDay(undefined, testDate, false), TypeError);
+    assert.throws(() => makeDay('Luna', testDate, false), TypeError);
+    assert.throws(() => makeDay({ petName: 'Luna' }, testDate, false), TypeError);
+    assert.throws(() => makeDay({ normal: 'high' }, testDate, false), TypeError);
+});
+
+test('makeDay rejects bad normal values', () => {
+    const bad = (normal) => ({ ...testPet, normal: { ...testPet.normal, ...normal } });
+    assert.throws(() => makeDay(bad({ food: '3' }), testDate, false), TypeError);
+    assert.throws(() => makeDay(bad({ water: null }), testDate, false), TypeError);
+    assert.throws(() => makeDay(bad({ activity: NaN }), testDate, false), TypeError);
+    assert.throws(() => makeDay(bad({ weight: Infinity }), testDate, false), TypeError);
+    assert.throws(() => makeDay({ ...testPet, normal: { food: 1, water: 1, activity: 1 } }, testDate, false), TypeError);
+});
+
+test('makeDay rejects a bad date', () => {
+    assert.throws(() => makeDay(testPet, '2026-11-01', false), TypeError);
+    assert.throws(() => makeDay(testPet, new Date('not a date'), false), TypeError);
+    assert.throws(() => makeDay(testPet, null, false), TypeError);
+    assert.throws(() => makeDay(testPet, undefined, false), TypeError);
+    assert.throws(() => makeDay(testPet, 1730419200000, false), TypeError);
+});
+
+test('makeDay rejects isSick that is not true or false', () => {
+    assert.throws(() => makeDay(testPet, testDate, 'true'), TypeError);
+    assert.throws(() => makeDay(testPet, testDate, 1), TypeError);
+    assert.throws(() => makeDay(testPet, testDate, null), TypeError);
+    assert.throws(() => makeDay(testPet, testDate, undefined), TypeError);
+    assert.throws(() => makeDay(testPet, testDate), TypeError);
 });

@@ -1,3 +1,5 @@
+import { SYMPTOMS } from '../ml/features.js';
+
 // Names for synthetic pets
 const PET_NAMES = [
     'Luna', 'Max', 'Bella', 'Charlie', 'Milo', 'Lucy', 'Cooper', 'Daisy',
@@ -24,6 +26,20 @@ const SPECIES_PROFILES = {
 
 // Number of fake users the pets are spread across
 const SEED_USER_COUNT = 10;
+
+// How much each value can wiggle on a normal day (90% to 110% of normal)
+const NORMAL_CHANGE = { min: 0.9, max: 1.1 };
+
+// How much each value changes on a sick day (fraction of normal)
+const SICK_CHANGES = {
+    food: { min: 0.3, max: 0.7 },
+    water: { min: 0.6, max: 1.3 },
+    activity: { min: 0.3, max: 0.6 },
+    weight: { min: 0.97, max: 1.0 },
+};
+
+// Chance that a healthy day still has one random symptom
+const HEALTHY_SYMPTOM_CHANCE = 0.05;
 
 /**
  * Returns a random number between a minimum and maximum value.
@@ -94,4 +110,83 @@ export function makePet(index, random = Math.random) {
     }
 
     return { petName, petSpecies, userId, normal };
+}
+
+/**
+ * Creates one day’s entry for one pet.
+ * 
+ * @param {Object} pet - Pet object containing normal metrics, name, species, and userId.
+ * @param {Date} date - Date instance for the entry.
+ * @param {boolean} isSick - Boolean indicating if it's a sick day.
+ * @param {Function} [random=Math.random] - Random number generator function.
+ * @returns {Object} The generated day entry.
+ */
+export function makeDay(pet, date, isSick, random = Math.random) {
+    // Validation checks
+    if (!pet || typeof pet !== 'object' || !pet.normal || typeof pet.normal !== 'object') {
+        throw new TypeError('Invalid pet object: must contain a "normal" object.');
+    }
+
+    const fields = ['food', 'water', 'activity', 'weight'];
+    for (const field of fields) {
+        if (typeof pet.normal[field] !== 'number' || !Number.isFinite(pet.normal[field])) {
+            throw new TypeError(`Invalid or non-finite number for pet.normal.${field}`);
+        }
+    }
+
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        throw new TypeError('Invalid date: must be a valid Date instance.');
+    }
+
+    if (typeof isSick !== 'boolean') {
+        throw new TypeError('Invalid isSick: must be a boolean.');
+    }
+
+    // Find values based on normal/sick ranges
+    const entryValues = {};
+    for (const field of fields) {
+        const range = isSick ? SICK_CHANGES[field] : NORMAL_CHANGE;
+        const rawValue = pet.normal[field] * randomBetween(range.min, range.max, random);
+
+        if (field === 'activity') {
+            entryValues[field] = Math.round(rawValue);
+        } else {
+            // food, water, weight rounded to 2 decimal places
+            entryValues[field] = Math.round(rawValue * 100) / 100;
+        }
+    }
+
+    // Determine symptoms without an unsafe loop
+    let symptomCount = 0;
+    if (isSick) {
+        symptomCount = random() < 0.5 ? 1 : 2;
+    } else {
+        symptomCount = random() < HEALTHY_SYMPTOM_CHANCE ? 1 : 0;
+    }
+
+    const symptoms = [];
+    if (symptomCount > 0 && SYMPTOMS && SYMPTOMS.length > 0) {
+        const start = Math.floor(random() * SYMPTOMS.length);
+        symptoms.push(SYMPTOMS[start]);
+
+        if (symptomCount > 1) {
+            const nextIndex = (start + 1) % SYMPTOMS.length;
+            symptoms.push(SYMPTOMS[nextIndex]);
+        }
+    }
+
+    // Return the constructed day entry object
+    return {
+        petName: pet.petName,
+        petSpecies: pet.petSpecies,
+        userId: pet.userId,
+        date,
+        food: entryValues.food,
+        water: entryValues.water,
+        activity: entryValues.activity,
+        weight: entryValues.weight,
+        symptoms,
+        predictedProbability: null,
+        needsAttention: isSick
+    };
 }
