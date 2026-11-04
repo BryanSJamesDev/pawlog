@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sigmoid, predict } from './logisticRegression.js';
+import { sigmoid, predict, train } from './logisticRegression.js';
 
 // Normal cases
 test('sigmoid returns 0.5 when input is 0', () => {
@@ -151,4 +151,168 @@ test('predict rejects non-number values inside the arrays', () => {
 test('predict rejects NaN or Infinity inside the arrays', () => {
     assert.throws(() => predict([NaN], [1], 0), TypeError);
     assert.throws(() => predict([Infinity], [1], 0), TypeError);
+});
+
+// train: shared test data
+// Simple pattern: small values are 0, large values are 1
+const simpleX = [[0], [1], [2], [3], [4], [5]];
+const simpleY = [0, 0, 0, 1, 1, 1];
+
+// train: normal cases
+test('train returns weights and bias with the right shape', () => {
+    const model = train(simpleX, simpleY);
+    assert.ok(Array.isArray(model.weights));
+    assert.equal(model.weights.length, 1);
+    assert.equal(typeof model.bias, 'number');
+    assert.ok(Number.isFinite(model.bias));
+    assert.ok(model.weights.every(Number.isFinite));
+});
+
+test('train matches a hand-worked single epoch', () => {
+    // Start: weights [0], bias 0, prediction 0.5, error 0.5 - 1 = -0.5
+    // weight = 0 - 0.1 * (-0.5 * 1) / 1 = 0.05
+    // bias   = 0 - 0.1 * (-0.5) / 1 = 0.05
+    const model = train([[1]], [1], { learningRate: 0.1, epochs: 1 });
+    assert.ok(Math.abs(model.weights[0] - 0.05) < 1e-10);
+    assert.ok(Math.abs(model.bias - 0.05) < 1e-10);
+});
+
+test('train learns a simple increasing pattern', () => {
+    const { weights, bias } = train(simpleX, simpleY, { learningRate: 0.5, epochs: 2000 });
+    assert.ok(predict([0], weights, bias) < 0.5);
+    assert.ok(predict([5], weights, bias) > 0.5);
+    assert.ok(weights[0] > 0);
+});
+
+test('train learns a decreasing pattern with a negative weight', () => {
+    const flippedY = [1, 1, 1, 0, 0, 0];
+    const { weights, bias } = train(simpleX, flippedY, { learningRate: 0.5, epochs: 2000 });
+    assert.ok(predict([0], weights, bias) > 0.5);
+    assert.ok(predict([5], weights, bias) < 0.5);
+    assert.ok(weights[0] < 0);
+});
+
+test('train classifies all training examples correctly on clear data', () => {
+    const { weights, bias } = train(simpleX, simpleY, { learningRate: 0.5, epochs: 3000 });
+    for (let i = 0; i < simpleX.length; i++) {
+        const guess = predict(simpleX[i], weights, bias) >= 0.5 ? 1 : 0;
+        assert.equal(guess, simpleY[i]);
+    }
+});
+
+test('train works with multiple features', () => {
+    // Only the first feature matters; the second is noise
+    const X = [[0, 3], [1, 1], [2, 4], [8, 2], [9, 5], [10, 1]];
+    const y = [0, 0, 0, 1, 1, 1];
+    const { weights, bias } = train(X, y, { learningRate: 0.1, epochs: 3000 });
+    assert.equal(weights.length, 2);
+    assert.ok(predict([0, 3], weights, bias) < 0.5);
+    assert.ok(predict([10, 3], weights, bias) > 0.5);
+});
+
+test('more epochs move predictions closer to the right answer', () => {
+    const short = train(simpleX, simpleY, { epochs: 10 });
+    const long = train(simpleX, simpleY, { epochs: 2000 });
+    const shortGuess = predict([5], short.weights, short.bias);
+    const longGuess = predict([5], long.weights, long.bias);
+    assert.ok(longGuess > shortGuess);
+});
+
+test('train with all 0 answers predicts below 0.5', () => {
+    const { weights, bias } = train([[1], [2], [3]], [0, 0, 0], { epochs: 500 });
+    assert.ok(predict([2], weights, bias) < 0.5);
+});
+
+test('train with all 1 answers predicts above 0.5', () => {
+    const { weights, bias } = train([[1], [2], [3]], [1, 1, 1], { epochs: 500 });
+    assert.ok(predict([2], weights, bias) > 0.5);
+});
+
+test('train uses default options when none are given', () => {
+    const withDefaults = train(simpleX, simpleY);
+    const explicit = train(simpleX, simpleY, { learningRate: 0.1, epochs: 1000 });
+    assert.deepEqual(withDefaults, explicit);
+});
+
+test('train gives the same result every time for the same input', () => {
+    assert.deepEqual(train(simpleX, simpleY), train(simpleX, simpleY));
+});
+
+test('train does not change the input arrays', () => {
+    const X = [[1, 2], [3, 4]];
+    const y = [0, 1];
+    train(X, y, { epochs: 5 });
+    assert.deepEqual(X, [[1, 2], [3, 4]]);
+    assert.deepEqual(y, [0, 1]);
+});
+
+// train: boundary and large inputs
+test('train works with a single example', () => {
+    const model = train([[2]], [1], { epochs: 10 });
+    assert.equal(model.weights.length, 1);
+});
+
+test('train handles 1000+ examples', () => {
+    const X = [];
+    const y = [];
+    for (let i = 0; i < 1200; i++) {
+        const value = i % 10;
+        X.push([value]);
+        y.push(value >= 5 ? 1 : 0);
+    }
+    const { weights, bias } = train(X, y, { learningRate: 0.5, epochs: 300 });
+    assert.ok(predict([9], weights, bias) > 0.5);
+    assert.ok(predict([0], weights, bias) < 0.5);
+});
+
+// train: error handling
+test('train rejects non-array X or y', () => {
+    assert.throws(() => train('abc', [0]), TypeError);
+    assert.throws(() => train([[1]], null), TypeError);
+    assert.throws(() => train(undefined, [0]), TypeError);
+    assert.throws(() => train([[1]], { 0: 1 }), TypeError);
+});
+
+test('train rejects empty or mismatched X and y', () => {
+    assert.throws(() => train([], []), Error);
+    assert.throws(() => train([[1], [2]], [0]), Error);
+    assert.throws(() => train([[1]], [0, 1]), Error);
+});
+
+test('train rejects bad rows', () => {
+    assert.throws(() => train([1, 2], [0, 1]), Error);
+    assert.throws(() => train([[]], [0]), Error);
+    assert.throws(() => train([[1, 2], [3]], [0, 1]), Error);
+    assert.throws(() => train([[1], 'x'], [0, 1]), Error);
+});
+
+test('train rejects y values that are not exactly 0 or 1', () => {
+    assert.throws(() => train([[1]], [2]), Error);
+    assert.throws(() => train([[1]], [-1]), Error);
+    assert.throws(() => train([[1]], [0.5]), Error);
+    assert.throws(() => train([[1]], ['1']), Error);
+    assert.throws(() => train([[1]], [true]), Error);
+    assert.throws(() => train([[1]], [null]), Error);
+});
+
+test('train rejects invalid learning rates', () => {
+    assert.throws(() => train(simpleX, simpleY, { learningRate: 0 }), Error);
+    assert.throws(() => train(simpleX, simpleY, { learningRate: -0.1 }), Error);
+    assert.throws(() => train(simpleX, simpleY, { learningRate: NaN }), Error);
+    assert.throws(() => train(simpleX, simpleY, { learningRate: Infinity }), Error);
+    assert.throws(() => train(simpleX, simpleY, { learningRate: '0.1' }), Error);
+});
+
+test('train rejects invalid epochs', () => {
+    assert.throws(() => train(simpleX, simpleY, { epochs: 0 }), Error);
+    assert.throws(() => train(simpleX, simpleY, { epochs: -5 }), Error);
+    assert.throws(() => train(simpleX, simpleY, { epochs: 1.5 }), Error);
+    assert.throws(() => train(simpleX, simpleY, { epochs: '10' }), Error);
+    assert.throws(() => train(simpleX, simpleY, { epochs: NaN }), Error);
+});
+
+test('train rejects non-number feature values', () => {
+    assert.throws(() => train([['1']], [1]), TypeError);
+    assert.throws(() => train([[null]], [1]), TypeError);
+    assert.throws(() => train([[NaN]], [1]), TypeError);
 });
