@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getBaseline } from './features.js';
+import { getBaseline, extractFeatures, SYMPTOMS } from './features.js';
+import { predict } from './logisticRegression.js';
 
 // Helper to build an entry quickly
 function entry(food, water, activity, weight) {
@@ -117,4 +118,150 @@ test('getBaseline rejects NaN and Infinity values', () => {
 test('getBaseline rejects if any one entry is bad, even with good ones', () => {
     const past = [entry(1, 1, 1, 1), entry(2, 2, 2, 2), { ...entry(3, 3, 3, 3), food: 'x' }];
     assert.throws(() => getBaseline(past), TypeError);
+});
+
+// extractFeatures: helper to compare arrays of decimals
+function assertClose(actual, expected) {
+    assert.equal(actual.length, expected.length);
+    for (let i = 0; i < expected.length; i++) {
+        assert.ok(
+            Math.abs(actual[i] - expected[i]) < 1e-10,
+            `Index ${i}: expected ${expected[i]}, got ${actual[i]}`
+        );
+    }
+}
+
+const normalPast = [entry(2, 4, 40, 10)];
+
+// extractFeatures: normal cases
+test('extractFeatures matches a hand-worked example', () => {
+    // food: (1.4 - 2) / 2 = -0.3, water: 0, activity: (60 - 40) / 40 = 0.5, weight: 0.05
+    const current = { ...entry(1.4, 4, 60, 10.5), symptoms: [] };
+    assertClose(extractFeatures(current, normalPast), [-0.3, 0, 0.5, 0.05, 0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures always returns 9 features', () => {
+    assert.equal(extractFeatures(entry(1, 1, 1, 1), []).length, 9);
+    assert.equal(extractFeatures({ ...entry(1, 1, 1, 1), symptoms: SYMPTOMS }, normalPast).length, 9);
+});
+
+test('extractFeatures returns 0 changes when there are no past entries', () => {
+    const current = { ...entry(5, 5, 5, 5), symptoms: ['vomiting'] };
+    assert.deepEqual(extractFeatures(current, []), [0, 0, 0, 0, 0, 1, 0, 0, 0]);
+});
+
+test('extractFeatures returns all 0 changes when the entry matches the baseline', () => {
+    assertClose(extractFeatures(entry(2, 4, 40, 10), normalPast), [0, 0, 0, 0, 0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures uses the average of several past entries', () => {
+    const past = [entry(1, 2, 20, 8), entry(3, 6, 60, 12)]; // averages: 2, 4, 40, 10
+    assertClose(extractFeatures(entry(1, 4, 40, 10), past), [-0.5, 0, 0, 0, 0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures sets symptom flags in the fixed order', () => {
+    const current = { ...entry(2, 4, 40, 10), symptoms: ['coughing', 'vomiting'] };
+    assert.deepEqual(extractFeatures(current, normalPast).slice(4), [0, 1, 0, 0, 1]);
+});
+
+test('extractFeatures sets every flag when all symptoms are present', () => {
+    const current = { ...entry(2, 4, 40, 10), symptoms: [...SYMPTOMS] };
+    assert.deepEqual(extractFeatures(current, normalPast).slice(4), [1, 1, 1, 1, 1]);
+});
+
+test('extractFeatures treats missing symptoms as none', () => {
+    assert.deepEqual(extractFeatures(entry(2, 4, 40, 10), normalPast).slice(4), [0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures treats an empty symptoms array as none', () => {
+    const current = { ...entry(2, 4, 40, 10), symptoms: [] };
+    assert.deepEqual(extractFeatures(current, normalPast).slice(4), [0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures ignores symptoms not on the list', () => {
+    const current = { ...entry(2, 4, 40, 10), symptoms: ['sneezing', 'limping'] };
+    assert.deepEqual(extractFeatures(current, normalPast).slice(4), [0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures counts a repeated symptom only once', () => {
+    const current = { ...entry(2, 4, 40, 10), symptoms: ['vomiting', 'vomiting'] };
+    assert.deepEqual(extractFeatures(current, normalPast).slice(4), [0, 1, 0, 0, 0]);
+});
+
+test('extractFeatures is case-sensitive, so symptoms must be saved lowercase', () => {
+    const current = { ...entry(2, 4, 40, 10), symptoms: ['Vomiting'] };
+    assert.deepEqual(extractFeatures(current, normalPast).slice(4), [0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures output works with predict', () => {
+    const current = { ...entry(1, 4, 40, 10), symptoms: ['not eating'] };
+    const features = extractFeatures(current, normalPast);
+    const result = predict(features, new Array(9).fill(0.5), 0);
+    assert.ok(result >= 0 && result <= 1);
+});
+
+// extractFeatures: boundary and large inputs
+test('extractFeatures returns 0 for a field whose baseline is 0', () => {
+    const past = [entry(2, 4, 0, 10)];
+    assertClose(extractFeatures(entry(2, 4, 30, 10), past), [0, 0, 0, 0, 0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures returns -1 when the value drops to 0', () => {
+    assertClose(extractFeatures(entry(0, 4, 40, 10), normalPast).slice(0, 1), [-1]);
+});
+
+test('extractFeatures handles a very large increase', () => {
+    assertClose(extractFeatures(entry(200, 4, 40, 10), normalPast).slice(0, 1), [99]);
+});
+
+test('extractFeatures handles many past entries', () => {
+    const past = [];
+    for (let i = 0; i < 10000; i++) {
+        past.push(entry(2, 4, 40, 10));
+    }
+    assertClose(extractFeatures(entry(1, 4, 40, 10), past), [-0.5, 0, 0, 0, 0, 0, 0, 0, 0]);
+});
+
+test('extractFeatures does not change its inputs', () => {
+    const current = { ...entry(1, 4, 40, 10), symptoms: ['vomiting'] };
+    const past = [entry(2, 4, 40, 10)];
+    const currentCopy = { ...current, symptoms: [...current.symptoms] };
+    const pastCopy = past.map((e) => ({ ...e }));
+    extractFeatures(current, past);
+    assert.deepEqual(current, currentCopy);
+    assert.deepEqual(past, pastCopy);
+});
+
+// extractFeatures: error handling
+test('extractFeatures rejects an entry that is not an object', () => {
+    assert.throws(() => extractFeatures(null, normalPast), TypeError);
+    assert.throws(() => extractFeatures(undefined, normalPast), TypeError);
+    assert.throws(() => extractFeatures('entry', normalPast), TypeError);
+    assert.throws(() => extractFeatures([1, 2, 3, 4], normalPast), TypeError);
+});
+
+test('extractFeatures rejects an entry with missing or bad fields', () => {
+    assert.throws(() => extractFeatures({ food: 1, water: 1, activity: 1 }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), food: '1' }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), weight: NaN }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), water: null }, normalPast), TypeError);
+});
+
+test('extractFeatures rejects symptoms that are not an array', () => {
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), symptoms: 'vomiting' }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), symptoms: null }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), symptoms: { 0: 'vomiting' } }, normalPast), TypeError);
+});
+
+test('extractFeatures rejects symptoms that are not strings', () => {
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), symptoms: [1] }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), symptoms: [null] }, normalPast), TypeError);
+    assert.throws(() => extractFeatures({ ...entry(1, 1, 1, 1), symptoms: ['vomiting', true] }, normalPast), TypeError);
+});
+
+test('extractFeatures rejects bad past entries', () => {
+    assert.throws(() => extractFeatures(entry(1, 1, 1, 1), null), TypeError);
+    assert.throws(() => extractFeatures(entry(1, 1, 1, 1), 'past'), TypeError);
+    assert.throws(() => extractFeatures(entry(1, 1, 1, 1), [null]), TypeError);
+    assert.throws(() => extractFeatures(entry(1, 1, 1, 1), [{ food: 'x' }]), TypeError);
 });
