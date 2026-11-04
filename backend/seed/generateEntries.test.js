@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomBetween, makePet, makeDay } from './generateEntries.js';
+import { randomBetween, makePet, makeDay, generateEntries } from './generateEntries.js';
 import { SYMPTOMS, extractFeatures } from '../ml/features.js';
+import { train, accuracy, trainTestSplit } from '../ml/logisticRegression.js';
 
 // Fake random that always returns the same value
 const always = (value) => () => value;
@@ -349,4 +350,200 @@ test('makeDay rejects isSick that is not true or false', () => {
     assert.throws(() => makeDay(testPet, testDate, null), TypeError);
     assert.throws(() => makeDay(testPet, testDate, undefined), TypeError);
     assert.throws(() => makeDay(testPet, testDate), TypeError);
+});
+
+// generateEntries: helpers
+// Seeded random: gives the same "random" numbers every run, so tests can compare outputs
+function seeded(seed) {
+    let state = seed;
+    return () => {
+        state = (state * 1664525 + 1013904223) % 4294967296;
+        return state / 4294967296;
+    };
+}
+
+const fixedEnd = new Date(2026, 10, 3); // Nov 3, 2026
+
+function shareTrue(entries) {
+    return entries.filter((e) => e.needsAttention).length / entries.length;
+}
+
+// generateEntries: normal cases
+test('generateEntries makes 1500 entries by default (at least 1000 for the rubric)', () => {
+    const entries = generateEntries();
+    assert.equal(entries.length, 1500);
+    assert.ok(entries.length >= 1000);
+});
+
+test('generateEntries makes petCount times days entries', () => {
+    assert.equal(generateEntries({ petCount: 3, days: 4 }).length, 12);
+});
+
+test('generateEntries gives each pet one entry per day, oldest first, ending on endDate', () => {
+    const entries = generateEntries({ petCount: 2, days: 5, endDate: fixedEnd });
+    const luna = entries.filter((e) => e.petName === 'Luna');
+    assert.equal(luna.length, 5);
+    for (let i = 0; i < luna.length; i++) {
+        const expected = new Date(2026, 10, 3 - (4 - i));
+        assert.equal(luna[i].date.getTime(), expected.getTime());
+    }
+});
+
+test('generateEntries handles going back across a month boundary', () => {
+    const entries = generateEntries({ petCount: 1, days: 7, endDate: fixedEnd });
+    assert.equal(entries[0].date.getMonth(), 9); // October
+    assert.equal(entries[0].date.getDate(), 28);
+    assert.equal(entries[6].date.getDate(), 3);
+});
+
+test('generateEntries does not change endDate', () => {
+    const end = new Date(2026, 10, 3);
+    generateEntries({ petCount: 2, days: 10, endDate: end });
+    assert.equal(end.getTime(), new Date(2026, 10, 3).getTime());
+});
+
+test('every pet has a unique name and the right number of days', () => {
+    const entries = generateEntries({ petCount: 50, days: 30 });
+    const counts = {};
+    for (const e of entries) {
+        counts[e.petName] = (counts[e.petName] || 0) + 1;
+    }
+    assert.equal(Object.keys(counts).length, 50);
+    assert.ok(Object.values(counts).every((c) => c === 30));
+});
+
+test('generateEntries spreads pets across 10 seed users', () => {
+    const userIds = new Set(generateEntries().map((e) => e.userId));
+    assert.equal(userIds.size, 10);
+});
+
+test('with no sickness and no noise, nothing needs attention', () => {
+    const entries = generateEntries({ sickChance: 0, labelNoise: 0 });
+    assert.ok(entries.every((e) => e.needsAttention === false));
+});
+
+test('with sickChance 1 and no noise, every day needs attention', () => {
+    const entries = generateEntries({ petCount: 5, sickChance: 1, labelNoise: 0 });
+    assert.ok(entries.every((e) => e.needsAttention === true));
+});
+
+test('labelNoise 1 flips every label', () => {
+    const healthy = generateEntries({ petCount: 5, sickChance: 0, labelNoise: 1 });
+    const sick = generateEntries({ petCount: 5, sickChance: 1, labelNoise: 1 });
+    assert.ok(healthy.every((e) => e.needsAttention === true));
+    assert.ok(sick.every((e) => e.needsAttention === false));
+});
+
+test('label noise flips about 5% of labels', () => {
+    const entries = generateEntries({ petCount: 200, sickChance: 0, labelNoise: 0.05 });
+    const share = shareTrue(entries);
+    assert.ok(share > 0.03 && share < 0.07, `share was ${share}`);
+});
+
+test('the default settings make a realistic mix of sick and healthy days', () => {
+    const entries = generateEntries({ petCount: 200 });
+    const share = shareTrue(entries);
+    // Roughly 15-25% expected; wide range so the test doesn't randomly fail
+    assert.ok(share > 0.08 && share < 0.4, `share was ${share}`);
+});
+
+test('sick days really have lower food than healthy days', () => {
+    const entries = generateEntries({ petCount: 1, days: 1, sickChance: 1, labelNoise: 0, random: always(0.4) });
+    const healthy = generateEntries({ petCount: 1, days: 1, sickChance: 0, labelNoise: 0, random: always(0.4) });
+    assert.ok(entries[0].food < healthy[0].food);
+});
+
+test('the same seeded random gives the same entries every time', () => {
+    const a = generateEntries({ petCount: 5, days: 10, endDate: fixedEnd, random: seeded(42) });
+    const b = generateEntries({ petCount: 5, days: 10, endDate: fixedEnd, random: seeded(42) });
+    assert.deepEqual(a, b);
+});
+
+test('different seeds give different entries', () => {
+    const a = generateEntries({ petCount: 5, days: 10, endDate: fixedEnd, random: seeded(1) });
+    const b = generateEntries({ petCount: 5, days: 10, endDate: fixedEnd, random: seeded(2) });
+    assert.notDeepEqual(a, b);
+});
+
+test('every generated entry works with extractFeatures', () => {
+    const entries = generateEntries({ petCount: 3, days: 20 });
+    for (let i = 0; i < entries.length; i++) {
+        const pet = entries[i].petName;
+        const past = entries.slice(0, i).filter((e) => e.petName === pet).slice(-14);
+        assert.equal(extractFeatures(entries[i], past).length, 10);
+    }
+});
+
+test('a model trained on generated data scores well on unseen data', () => {
+    const entries = generateEntries();
+    const X = [];
+    const y = [];
+    const byPet = {};
+
+    for (const e of entries) {
+        const past = (byPet[e.petName] || []).slice(-14);
+        X.push(extractFeatures(e, past));
+        y.push(e.needsAttention ? 1 : 0);
+        byPet[e.petName] = [...(byPet[e.petName] || []), e];
+    }
+
+    const { XTrain, yTrain, XTest, yTest } = trainTestSplit(X, y);
+    const model = train(XTrain, yTrain, { learningRate: 0.5, epochs: 500 });
+    const score = accuracy(XTest, yTest, model);
+    assert.ok(score > 0.75, `accuracy was ${score}`);
+});
+
+// generateEntries: boundary and large inputs
+test('generateEntries works with 1 pet and 1 day', () => {
+    const entries = generateEntries({ petCount: 1, days: 1, endDate: fixedEnd });
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].date.getTime(), fixedEnd.getTime());
+});
+
+test('generateEntries handles a large dataset', () => {
+    assert.equal(generateEntries({ petCount: 200, days: 60 }).length, 12000);
+});
+
+test('generateEntries accepts sickChance and labelNoise of exactly 0 and 1', () => {
+    assert.doesNotThrow(() => generateEntries({ petCount: 1, sickChance: 0, labelNoise: 1 }));
+    assert.doesNotThrow(() => generateEntries({ petCount: 1, sickChance: 1, labelNoise: 0 }));
+});
+
+// generateEntries: error handling
+test('generateEntries rejects bad petCount', () => {
+    assert.throws(() => generateEntries({ petCount: 0 }), TypeError);
+    assert.throws(() => generateEntries({ petCount: -1 }), TypeError);
+    assert.throws(() => generateEntries({ petCount: 1.5 }), TypeError);
+    assert.throws(() => generateEntries({ petCount: '50' }), TypeError);
+    assert.throws(() => generateEntries({ petCount: null }), TypeError);
+});
+
+test('generateEntries rejects bad days', () => {
+    assert.throws(() => generateEntries({ days: 0 }), TypeError);
+    assert.throws(() => generateEntries({ days: -5 }), TypeError);
+    assert.throws(() => generateEntries({ days: 2.5 }), TypeError);
+    assert.throws(() => generateEntries({ days: '30' }), TypeError);
+});
+
+test('generateEntries rejects a bad endDate', () => {
+    assert.throws(() => generateEntries({ endDate: '2026-11-03' }), TypeError);
+    assert.throws(() => generateEntries({ endDate: new Date('nope') }), TypeError);
+    assert.throws(() => generateEntries({ endDate: null }), TypeError);
+});
+
+test('generateEntries rejects bad sickChance and labelNoise', () => {
+    assert.throws(() => generateEntries({ sickChance: -0.1 }), TypeError);
+    assert.throws(() => generateEntries({ sickChance: 1.1 }), TypeError);
+    assert.throws(() => generateEntries({ sickChance: NaN }), TypeError);
+    assert.throws(() => generateEntries({ sickChance: '0.1' }), TypeError);
+    assert.throws(() => generateEntries({ labelNoise: -0.1 }), TypeError);
+    assert.throws(() => generateEntries({ labelNoise: 2 }), TypeError);
+    assert.throws(() => generateEntries({ labelNoise: Infinity }), TypeError);
+    assert.throws(() => generateEntries({ labelNoise: null }), TypeError);
+});
+
+test('generateEntries rejects a random that is not a function', () => {
+    assert.throws(() => generateEntries({ random: 'abc' }), TypeError);
+    assert.throws(() => generateEntries({ random: 0.5 }), TypeError);
+    assert.throws(() => generateEntries({ random: null }), TypeError);
 });

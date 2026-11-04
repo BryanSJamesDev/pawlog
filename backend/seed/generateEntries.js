@@ -190,3 +190,89 @@ export function makeDay(pet, date, isSick, random = Math.random) {
         needsAttention: isSick
     };
 }
+
+/**
+ * Generates synthetic entries for multiple pets over a given number of days.
+ * 
+ * @param {Object} [options={}] - Configuration options for entry generation.
+ * @param {number} [options.petCount=50] - Number of pets to generate.
+ * @param {number} [options.days=30] - Number of days of history per pet.
+ * @param {Date} [options.endDate=new Date()] - The end date for the entries.
+ * @param {number} [options.sickChance=0.08] - Probability of a sick spell starting on a healthy day.
+ * @param {number} [options.labelNoise=0.05] - Probability that the needsAttention label is flipped.
+ * @param {Function} [options.random=Math.random] - Random number generator function.
+ * @returns {Array<Object>} An array of all generated daily pet entries.
+ * @throws {TypeError} If any option fails validation.
+ */
+export function generateEntries(options = {}) {
+    const {
+        petCount = 50,
+        days = 30,
+        endDate = new Date(),
+        sickChance = 0.08,
+        labelNoise = 0.05,
+        random = Math.random,
+    } = options;
+
+    // 1. Validation checks
+    if (!Number.isInteger(petCount) || petCount <= 0) {
+        throw new TypeError('petCount must be a whole number greater than 0.');
+    }
+
+    if (!Number.isInteger(days) || days <= 0) {
+        throw new TypeError('days must be a whole number greater than 0.');
+    }
+
+    if (!(endDate instanceof Date) || Number.isNaN(endDate.getTime())) {
+        throw new TypeError('endDate must be a valid Date instance.');
+    }
+
+    if (typeof sickChance !== 'number' || !Number.isFinite(sickChance) || sickChance < 0 || sickChance > 1) {
+        throw new TypeError('sickChance must be a finite number between 0 and 1.');
+    }
+
+    if (typeof labelNoise !== 'number' || !Number.isFinite(labelNoise) || labelNoise < 0 || labelNoise > 1) {
+        throw new TypeError('labelNoise must be a finite number between 0 and 1.');
+    }
+
+    if (typeof random !== 'function') {
+        throw new TypeError('random must be a function.');
+    }
+
+    // 2. Generate entries across pets and days
+    const entries = [];
+
+    for (let p = 0; p < petCount; p++) {
+        const pet = makePet(p, random);
+        let sickDaysLeft = 0;
+
+        // Loop from oldest day to newest day (days - 1 down to 0)
+        for (let d = days - 1; d >= 0; d--) {
+            // Copy endDate first to avoid mutating the original
+            const date = new Date(endDate.getTime());
+            date.setDate(date.getDate() - d);
+
+            // Check if a new sick spell should start
+            if (sickDaysLeft === 0 && random() < sickChance) {
+                sickDaysLeft = 1 + Math.floor(random() * 4); // Lasts 1 to 4 days
+            }
+
+            const isSick = sickDaysLeft > 0;
+            if (isSick) {
+                sickDaysLeft--;
+            }
+
+            // Create the entry for this specific day
+            const day = makeDay(pet, date, isSick, random);
+
+            // Apply label noise (5% chance to flip needsAttention)
+            if (random() < labelNoise) {
+                day.needsAttention = !day.needsAttention;
+            }
+
+            entries.push(day);
+        }
+    }
+
+    return entries;
+}
