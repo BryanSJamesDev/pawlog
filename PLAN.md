@@ -9,6 +9,15 @@ This is our working plan. The final README (author, class link, objective, scree
 
 ---
 
+## Status
+
+- **Merged to main:** PLAN.md, `getDB()` connection, ML model + features, seed data generator
+- **In review:** `health-log` (entries CRUD). Uses a temporary user id until login is added.
+- **Next:** Passport login (`auth` branch), then swap the temporary user id for the real logged-in user
+- **Behind:** design doc and mockups (80 pts)
+
+---
+
 ## Quick Rules (so we don't lose points)
 
 - **No** axios, Mongoose, CORS, or any unapproved library (-20 pts)
@@ -25,29 +34,32 @@ This is our working plan. The final README (author, class link, objective, scree
 ---
 
 ## Folder Structure
+
+```
 pawlog/
 ├── backend/
-│ ├── package.json
-│ ├── server.js
-│ ├── db/ # Mongo connection + one file per collection
-│ ├── routes/ # entries, pets, careTasks, auth
-│ ├── ml/ # features + logistic regression
-│ └── seed/ # synthetic data scripts
+│   ├── package.json
+│   ├── index.js
+│   ├── db/            # Mongo connection
+│   ├── routes/        # entries, pets, careTasks, auth + validation
+│   ├── ml/            # features + logistic regression
+│   └── seed/          # synthetic data generator + seed script
 ├── frontend/
-│ ├── package.json
-│ └── src/
-│ ├── components/ # Component.jsx + Component.css
-│ └── pages/
-├── design/ # design doc + mockups
+│   ├── package.json
+│   └── src/
+│       ├── components/   # Component.jsx + Component.css
+│       └── pages/
+├── design/            # design doc + mockups
 ├── LICENSE
+├── PLAN.md
 └── README.md
-└── PLAN.md
+```
 
 ---
 
-## Day 0 – Tue, Nov 3 (today)
+## Day 0 – Tue, Nov 3
 
-- [ ] Send the proposal on Slack for approval
+- [x] Send the proposal on Slack for approval
 - [ ] Both: confirm what time class is, so we know when the 24-hour code freeze is
 
 ---
@@ -55,9 +67,9 @@ pawlog/
 ## Day 1 – Wed, Nov 4: Setup + Design Doc
 
 **Shared**
-- [ ] Create GitHub repo, add MIT license and `.gitignore` (include `.env` and `node_modules`)
-- [ ] Set up the MongoDB Atlas cluster and share access
-- [ ] Create `backend/` (Express) and `frontend/` (Vite + React), each with its own `package.json`
+- [x] Create GitHub repo, add MIT license and `.gitignore` (include `.env` and `node_modules`)
+- [x] Set up the MongoDB Atlas cluster and share access
+- [x] Create `backend/` (Express) and `frontend/` (Vite + React), each with its own `package.json`
 - [ ] Add ESLint and Prettier configs to both
 - [ ] Delete leftover starter files right away
 
@@ -76,9 +88,10 @@ pawlog/
 ## Day 2 – Thu, Nov 5: Backend + Data
 
 **Eleah**
-- [ ] `entries` collection + full CRUD routes
+- [x] `entries` collection + full CRUD routes (GET, POST, PUT, DELETE, with input validation)
 - [ ] Passport auth: register, login, logout (passport-local, express-session, bcrypt)
-- [ ] Seed script: 1k+ labeled health entries ("needs attention" or "normal", with some noise)
+- [x] Seed data generator: 1,500 labeled health entries ("needs attention" or "normal", with noise)
+- [ ] Seed script: save the generated entries to Mongo
 
 **Bryan**
 - [ ] `pets` collection + full CRUD routes
@@ -87,7 +100,7 @@ pawlog/
 
 **Both**
 - [ ] Protect routes so users only see their own data
-- [ ] Test every route with Postman or curl
+- [ ] Test every route with Postman or curl (Eleah's entries routes done)
 
 **End of day:** All routes work, and the database has 1k+ records.
 
@@ -116,9 +129,9 @@ pawlog/
 ## Day 4 – Sat, Nov 7: ML + Polish
 
 **Eleah**
-- [ ] Feature extraction: distance from each pet's 14-day normal, symptom flags, low days in a row
-- [ ] Logistic regression from scratch (gradient descent)
-- [ ] Train/test split and accuracy score
+- [x] Feature extraction: distance from each pet's 14-day normal, symptom flags, low days in a row
+- [x] Logistic regression from scratch (gradient descent)
+- [x] Train/test split and accuracy score
 - [ ] Save model weights to MongoDB
 - [ ] `POST /api/predict` and `POST /api/retrain` routes
 - [ ] `AlertsPage` with "real problem" / "false alarm" buttons
@@ -188,4 +201,3 @@ pawlog/
 - [ ] No prohibited libraries (20)
 - [ ] Passport authentication (10)
 - [ ] Peer review done (10)
-
