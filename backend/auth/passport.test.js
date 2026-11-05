@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import bcrypt from 'bcrypt';
-import { verifyUser } from './passport.js';
+import { ObjectId } from 'mongodb';
+import { verifyUser, configurePassport } from './passport.js';
 
 // Fake users collection, so no database is needed
 function fakeUsers(stored) {
@@ -140,4 +141,198 @@ test('verifyUser passes database errors up instead of hiding them as a failed lo
         },
     };
     await assert.rejects(() => verifyUser(brokenDb, 'eleah', 'secret123'), /database down/);
+});
+
+// configurePassport: fakes so no real Passport or database is needed
+function fakePassport() {
+    return {
+        use(strategy) {
+            this.strategy = strategy;
+        },
+        serializeUser(fn) {
+            this.serialize = fn;
+        },
+        deserializeUser(fn) {
+            this.deserialize = fn;
+        },
+    };
+}
+
+const realId = new ObjectId();
+const dbUser = { _id: realId, username: 'eleah', passwordHash: hash, createdAt: new Date('2026-11-01') };
+
+// Fake getDB with a users collection that understands username and _id lookups
+function fakeGetDB({ users = [dbUser], fail = false } = {}) {
+    const record = { getDBCalls: 0, collections: [], findOneOptions: [] };
+    const getDB = async () => {
+        record.getDBCalls++;
+        if (fail) {
+            throw new Error('database down');
+        }
+        return {
+            collection(name) {
+                record.collections.push(name);
+                return {
+                    async findOne(query, options) {
+                        record.findOneOptions.push(options);
+                        const found = users.find((u) =>
+                            query._id ? u._id.equals(query._id) : u.username === query.username
+                        );
+                        if (!found) {
+                            return null;
+                        }
+                        if (options?.projection?.passwordHash === 0) {
+                            const copy = { ...found };
+                            delete copy.passwordHash;
+                            return copy;
+                        }
+                        return found;
+                    },
+                };
+            },
+        };
+    };
+    return { getDB, record };
+}
+
+// Turn Passport's callback style into a promise so tests can await it
+function runVerify(passport, username, password) {
+    return new Promise((resolve) => {
+        passport.strategy._verify(username, password, (err, user, info) => resolve({ err, user, info }));
+    });
+}
+
+function runSerialize(passport, user) {
+    return new Promise((resolve) => {
+        passport.serialize(user, (err, id) => resolve({ err, id }));
+    });
+}
+
+function runDeserialize(passport, id) {
+    return new Promise((resolve) => {
+        passport.deserialize(id, (err, user) => resolve({ err, user }));
+    });
+}
+
+// configurePassport: setup
+test('configurePassport registers a local strategy', () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    assert.equal(passport.strategy.name, 'local');
+});
+
+test('configurePassport registers serialize and deserialize functions', () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    assert.equal(typeof passport.serialize, 'function');
+    assert.equal(typeof passport.deserialize, 'function');
+});
+
+// configurePassport: login strategy
+test('strategy logs in with the right password and hides the hash', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    const { err, user } = await runVerify(passport, 'eleah', 'secret123');
+    assert.equal(err, null);
+    assert.equal(user.username, 'eleah');
+    assert.equal('passwordHash' in user, false);
+});
+
+test('strategy uses the users collection', async () => {
+    const passport = fakePassport();
+    const { getDB, record } = fakeGetDB();
+    configurePassport(passport, getDB);
+    await runVerify(passport, 'eleah', 'secret123');
+    assert.deepEqual(record.collections, ['users']);
+});
+
+test('strategy fails a wrong password with a message', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    const { err, user, info } = await runVerify(passport, 'eleah', 'wrong');
+    assert.equal(err, null);
+    assert.equal(user, false);
+    assert.equal(info.message, 'Invalid username or password');
+});
+
+test('strategy gives the same message for an unknown username and a wrong password', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    const unknown = await runVerify(passport, 'nobody', 'secret123');
+    const wrong = await runVerify(passport, 'eleah', 'wrong');
+    assert.equal(unknown.info.message, wrong.info.message);
+});
+
+test('strategy passes database errors to Passport', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB({ fail: true }).getDB);
+    const { err, user } = await runVerify(passport, 'eleah', 'secret123');
+    assert.match(err.message, /database down/);
+    assert.equal(user, undefined);
+});
+
+// configurePassport: serializeUser
+test('serializeUser stores only the id as a string', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    const { err, id } = await runSerialize(passport, { _id: realId, username: 'eleah' });
+    assert.equal(err, null);
+    assert.equal(id, realId.toString());
+    assert.equal(typeof id, 'string');
+});
+
+// configurePassport: deserializeUser
+test('deserializeUser finds the user by id without the hash', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    const { err, user } = await runDeserialize(passport, realId.toString());
+    assert.equal(err, null);
+    assert.equal(user.username, 'eleah');
+    assert.equal('passwordHash' in user, false);
+});
+
+test('deserializeUser asks Mongo to leave out the hash', async () => {
+    const passport = fakePassport();
+    const { getDB, record } = fakeGetDB();
+    configurePassport(passport, getDB);
+    await runDeserialize(passport, realId.toString());
+    assert.deepEqual(record.findOneOptions[0], { projection: { passwordHash: 0 } });
+});
+
+test('deserializeUser returns false for a deleted user', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB({ users: [] }).getDB);
+    const { err, user } = await runDeserialize(passport, realId.toString());
+    assert.equal(err, null);
+    assert.equal(user, false);
+});
+
+test('deserializeUser returns false for a bad id without touching the database', async () => {
+    const passport = fakePassport();
+    const { getDB, record } = fakeGetDB();
+    configurePassport(passport, getDB);
+    for (const badId of ['abc', '', 'not-an-object-id-at-all']) {
+        const { err, user } = await runDeserialize(passport, badId);
+        assert.equal(err, null);
+        assert.equal(user, false);
+    }
+    assert.equal(record.getDBCalls, 0);
+});
+
+test('deserializeUser passes database errors to Passport', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB({ fail: true }).getDB);
+    const { err } = await runDeserialize(passport, realId.toString());
+    assert.match(err.message, /database down/);
+});
+
+// configurePassport: full round trip
+test('a logged-in user can be saved to the cookie and loaded back', async () => {
+    const passport = fakePassport();
+    configurePassport(passport, fakeGetDB().getDB);
+    const { user: loggedIn } = await runVerify(passport, 'eleah', 'secret123');
+    const { id } = await runSerialize(passport, loggedIn);
+    const { user: loaded } = await runDeserialize(passport, id);
+    assert.equal(loaded._id.toString(), realId.toString());
+    assert.equal(loaded.username, 'eleah');
 });
