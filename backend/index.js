@@ -4,6 +4,7 @@ import session from 'express-session';
 import passport from 'passport';
 import { getDB } from './db/connection.js';
 import { configurePassport } from './auth/passport.js';
+import authRouter from './routes/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,12 +31,14 @@ app.use(
         },
     })
 );
+app.use(express.json());
 
 // Passport login
 configurePassport(passport, getDB);
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.json());
+app.use('/api/auth', authRouter);
+
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
