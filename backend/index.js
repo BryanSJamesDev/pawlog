@@ -1,9 +1,40 @@
 import 'dotenv/config';
 import express from 'express';
+import session from 'express-session';
+import passport from 'passport';
+import { getDB } from './db/connection.js';
+import { configurePassport } from './auth/passport.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Stop right away if the session secret is missing
+if (!process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET is missing from .env');
+}
+
+// Needed for secure cookies when deployed behind a host like Render
+app.set('trust proxy', 1);
+
+// Login sessions (cookie-based)
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+        },
+    })
+);
+
+// Passport login
+configurePassport(passport, getDB);
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
