@@ -18,25 +18,24 @@
 // Import Router
 import { Router } from 'express';
 
+// Import getDB
+import { getDB } from '../db/connection.js';
+
 // Make a router
 const router = Router();
 
 // Add test route with GET
 router.get('/', async (req, res) => {
     try {
-        // Temporary test until getDB() exists
-        res.json({ message: 'entries route works' });
-
-        /*
         // Get all health entries from the database
-        const entries = await getDB()
+        const db = await getDB();
+        const entries = await db
             .collection('entries')
             .find()
             .toArray();
 
         // Return the entries
         res.json(entries);
-        */
     } catch (error) {
         console.error('Failed to load health entries', error);
         res.status(500).json({ error: 'Failed to load health entries' });
