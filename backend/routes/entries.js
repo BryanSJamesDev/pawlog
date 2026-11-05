@@ -18,6 +18,9 @@
 // Import Router
 import { Router } from 'express';
 
+// Import ObjectId from mongodb
+import { ObjectId } from 'mongodb';
+
 // Import getDB
 import { getDB } from '../db/connection.js';
 
@@ -75,6 +78,43 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Failed to create health entry', error);
         res.status(500).json({ error: 'Failed to create health entry' });
+    }
+});
+
+// Add PUT route to update an existing health entry by ID
+router.put('/:id', async (req, res) => {
+    // 1. Validate the MongoDB ObjectId parameter
+    if (!ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ error: 'Invalid entry id' });
+    }
+
+    // 2. Validate input data using the same rules as POST
+    let clean;
+    try {
+        clean = validateEntry(req.body);
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    // 3. Update the entry in the database
+    try {
+        const db = await getDB();
+        const updated = await db.collection('entries').findOneAndUpdate(
+            { _id: new ObjectId(req.params.id), userId: TEMP_USER_ID },
+            { $set: clean },
+            { returnDocument: 'after' }
+        );
+
+        // 4. Handle case where entry doesn't exist or isn't owned by user
+        if (!updated) {
+            return res.status(404).json({ error: 'Entry not found' });
+        }
+
+        // 5. Send back the updated entry
+        res.json(updated);
+    } catch (error) {
+        console.error('Failed to update health entry', error);
+        res.status(500).json({ error: 'Failed to update health entry' });
     }
 });
 
