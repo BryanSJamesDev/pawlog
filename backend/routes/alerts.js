@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { getDB } from '../db/connection.js';
 import { requireLogin } from '../auth/requireLogin.js';
-import { loadModel } from '../ml/modelStore.js';
 import { ObjectId } from 'mongodb';
+import { loadModel, saveModel } from '../ml/modelStore.js';
+import { trainFromEntries } from '../ml/trainModel.js';
 
 // Entries at or above this probability show up as alerts
 const ALERT_THRESHOLD = 0.5;
@@ -40,6 +41,33 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.post('/retrain', async (req, res) => {
+    try {
+        const db = await getDB();
+        
+        // Load every entry (all users plus seed data so everyone's feedback helps)
+        const entries = await db.collection('entries').find({}).toArray();
+
+        // Train on the entries
+        const result = trainFromEntries(entries);
+
+        // Save the retrained model and metadata
+        await saveModel(db.collection('models'), result.model, {
+            accuracy: result.accuracy,
+            trainedOn: result.trainedOn,
+        });
+
+        // Send back accuracy and training count
+        res.json({
+            accuracy: result.accuracy,
+            trainedOn: result.trainedOn,
+        });
+    } catch (error) {
+        console.error('Failed to retrain the model', error);
+        res.status(500).json({ error: 'Failed to retrain the model' });
+    }
+});
+
 router.post('/:id/feedback', async (req, res) => {
     try {
         // Check if ID is valid
@@ -74,4 +102,5 @@ router.post('/:id/feedback', async (req, res) => {
         res.status(500).json({ error: 'Failed to save feedback' });
     }
 });
+
 export default router;
