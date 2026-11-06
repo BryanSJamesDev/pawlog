@@ -1,15 +1,6 @@
 import PropTypes from 'prop-types';
 import '../css/EntryTable.css';
-
-// Dates are saved as midnight UTC, so format in UTC or they show a day early in New York
-function formatDate(date) {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+import { formatDate } from '../utils/formatDate.js';
 
 export default function EntryTable({ entries, onEdit, onDelete }) {
   return (
