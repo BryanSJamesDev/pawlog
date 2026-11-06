@@ -30,6 +30,9 @@ import { validateEntry } from './validateEntry.js';
 // Import requireLogin for users
 import { requireLogin } from '../auth/requireLogin.js';
 
+// Import scoreEntry
+import { scoreEntry } from '../ml/scoreEntry.js';
+
 // Make a router
 const router = Router();
 
@@ -67,16 +70,26 @@ router.post('/', async (req, res) => {
     }
 
     try {
+        const db = await getDB();
+        const userId = req.user._id.toString();
+
+        // Score it with the model (null if there's no model yet)
+        const predictedProbability = await scoreEntry({
+            entries: db.collection('entries'),
+            models: db.collection('models'),
+            userId,
+            entry: clean,
+        });
+
         // Build the full entry with server-controlled fields
         const entry = {
             ...clean,
-            userId: req.user._id.toString(),
-            predictedProbability: null,
+            userId,
+            predictedProbability,
             needsAttention: null,
         };
 
         // Save entry into the database
-        const db = await getDB();
         const result = await db.collection('entries').insertOne(entry);
 
         // Respond with 201 Created and the new entry including MongoDB's insertedId
@@ -105,9 +118,21 @@ router.put('/:id', async (req, res) => {
     // Update the entry in the database
     try {
         const db = await getDB();
+        const userId = req.user._id.toString();
+        const entryId = new ObjectId(req.params.id);
+
+        // Re-score with the edited values, not counting this entry as its own past
+        const predictedProbability = await scoreEntry({
+            entries: db.collection('entries'),
+            models: db.collection('models'),
+            userId,
+            entry: clean,
+            excludeId: entryId,
+        });
+
         const updated = await db.collection('entries').findOneAndUpdate(
-            { _id: new ObjectId(req.params.id), userId: req.user._id.toString() },
-            { $set: clean },
+            { _id: entryId, userId },
+            { $set: { ...clean, predictedProbability } },
             { returnDocument: 'after' }
         );
 
