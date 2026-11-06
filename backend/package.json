@@ -9,6 +9,7 @@
     "start": "node index.js",
     "lint": "eslint .",
     "train": "node ml/trainModel.js"
+    "seed": "node seed/seed.js"
   },
   "keywords": [],
   "author": "",
