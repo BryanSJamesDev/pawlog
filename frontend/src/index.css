@@ -1,4 +1,35 @@
+/* PawLog theme: colors and fonts from the design mockups */
+:root {
+  --color-primary: #1e3a8a;
+  --color-highlight: #3b9edb;
+  --color-alert: #e5484d;
+  --color-healthy: #2e9e6b;
+  --color-background: #f7f9fc;
+  --color-surface: #ffffff;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-alert-soft: #fdecec;
+  --color-highlight-soft: #eaf3fb;
+
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
 }
