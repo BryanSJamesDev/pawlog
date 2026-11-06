@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -29,7 +30,7 @@ export default function App() {
     <Routes>
       <Route
         path="/login"
-        element={user ? <Navigate to="/" /> : <p>Login page coming next</p>}
+        element={user ? <Navigate to="/" /> : <LoginPage onLogin={setUser} />}
       />
       <Route
         path="/*"
