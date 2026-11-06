@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import LogPage from './pages/LogPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
