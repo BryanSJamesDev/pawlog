@@ -12,9 +12,11 @@ This is our working plan. The final README (author, class link, objective, scree
 ## Status
 
 - **Merged to main:** PLAN.md, `getDB()` connection, ML model + features, seed data generator
-- **In review:** `health-log` (entries CRUD). Uses a temporary user id until login is added.
-- **Next:** Passport login (`auth` branch), then swap the temporary user id for the real logged-in user
-- **Behind:** design doc and mockups (80 pts)
+- **In review (5 PRs):** `design-doc`, `health-log` (entries CRUD), `auth` (Passport login), `seed-script` (1,500 entries saved to Mongo), `model-training` (training script + predictEntry)
+- **Model:** 95.3% test accuracy on 1,500 seed entries, saved in the `models` collection
+- **Merge order:** `design-doc` anytime; `health-log` before `auth` (both change `index.js`, keep both sides if there's a conflict)
+- **Next:** frontend (Login/Register, Daily Log Form, Entry History, Alerts)
+- **After merges:** predictions on new entries, alerts and feedback routes, `requireLogin`, swap `TEMP_USER_ID` for the real user
 
 ---
 
@@ -30,6 +32,7 @@ This is our working plan. The final README (author, class link, objective, scree
 - MIT license
 - Delete unused files (default favicon, `routes/users.js`, starter code)
 - No CORS library, so in production Express serves the built React app. In development, use the Vite proxy.
+- Design doc is its own file in `design/`, linked from the README (not pasted inside it)
 
 ---
 
@@ -40,20 +43,23 @@ pawlog/
 ├── backend/
 │   ├── package.json
 │   ├── index.js
+│   ├── auth/          # Passport setup + credential checks
 │   ├── db/            # Mongo connection
 │   ├── routes/        # entries, pets, careTasks, auth + validation
-│   ├── ml/            # features + logistic regression
+│   ├── ml/            # features, logistic regression, training, predictions
 │   └── seed/          # synthetic data generator + seed script
 ├── frontend/
 │   ├── package.json
 │   └── src/
 │       ├── components/   # Component.jsx + Component.css
 │       └── pages/
-├── design/            # design doc + mockups
+├── design/            # design doc PDF
 ├── LICENSE
 ├── PLAN.md
 └── README.md
 ```
+
+**Backend scripts:** `npm run dev` (server), `npm test` (all tests), `npm run seed` (reseed 1,500 entries), `npm run train` (retrain and save the model)
 
 ---
 
@@ -74,11 +80,11 @@ pawlog/
 - [ ] Delete leftover starter files right away
 
 **Eleah**
-- [ ] Design doc: project description, personas, user stories (copy from the proposal)
-- [ ] Mockups: daily log form, entry history, alerts page, login
+- [x] Design doc: project description, personas, user stories
+- [x] Mockups: all 9 screens, made in Figma and added to the design doc
 
 **Bryan**
-- [ ] Mockups: pet profiles, care task form, upcoming/overdue dashboard
+- [ ] Review his user stories and screens in the design doc
 - [ ] Plan the `pets` and `careTasks` fields
 
 **End of day:** Both apps run locally, and the design doc is close to done. It's worth 80 points, so it gets priority.
@@ -89,9 +95,9 @@ pawlog/
 
 **Eleah**
 - [x] `entries` collection + full CRUD routes (GET, POST, PUT, DELETE, with input validation)
-- [ ] Passport auth: register, login, logout (passport-local, express-session, bcrypt)
+- [x] Passport auth: register, login, logout, and `/api/auth/me` (passport-local, express-session, bcrypt)
 - [x] Seed data generator: 1,500 labeled health entries ("needs attention" or "normal", with noise)
-- [ ] Seed script: save the generated entries to Mongo
+- [x] Seed script: 1,500 entries saved to Mongo (`npm run seed`)
 
 **Bryan**
 - [ ] `pets` collection + full CRUD routes
@@ -100,7 +106,7 @@ pawlog/
 
 **Both**
 - [ ] Protect routes so users only see their own data
-- [ ] Test every route with Postman or curl (Eleah's entries routes done)
+- [ ] Test every route with Postman or curl (Eleah's entries and auth routes done)
 
 **End of day:** All routes work, and the database has 1k+ records.
 
@@ -132,8 +138,9 @@ pawlog/
 - [x] Feature extraction: distance from each pet's 14-day normal, symptom flags, low days in a row
 - [x] Logistic regression from scratch (gradient descent)
 - [x] Train/test split and accuracy score
-- [ ] Save model weights to MongoDB
-- [ ] `POST /api/predict` and `POST /api/retrain` routes
+- [x] Training script + save model weights to MongoDB (`npm run train`, 95.3% accuracy)
+- [x] `predictEntry` helper to score new entries
+- [ ] Add predictions to the POST route, plus alerts, feedback, and retrain routes
 - [ ] `AlertsPage` with "real problem" / "false alarm" buttons
 - [ ] Chart.js trend chart (weight and eating), if time allows
 
@@ -174,7 +181,7 @@ pawlog/
 
 ## Rubric Checklist
 
-- [ ] Design doc: description, personas, user stories, mockups (80)
+- [x] Design doc: description, personas, user stories, mockups (80)
 - [ ] Meets approved proposal requirements (15)
 - [ ] Usable, with instructions (5)
 - [ ] Actually useful (5)
@@ -184,20 +191,20 @@ pawlog/
 - [ ] Each component in its own file (15)
 - [ ] Deployed and working (10)
 - [ ] 2+ collections, full CRUD for each of us (15)
-- [ ] 1k+ synthetic records (10)
-- [ ] Node + Express (5)
+- [x] 1k+ synthetic records (10)
+- [x] Node + Express (5)
 - [ ] Prettier formatted (5)
 - [ ] Standard HTML tags (5)
 - [ ] CSS per component (5)
 - [ ] README complete (5)
 - [ ] No exposed credentials (5)
 - [ ] Separate backend and frontend `package.json` (5)
-- [ ] MIT license (5)
+- [x] MIT license (5)
 - [ ] No leftover unused code (5)
 - [ ] Google Form correct (5)
 - [ ] Public narrated video with both of us (10)
 - [ ] Code frozen on time (5)
 - [ ] PropTypes on every component (5)
 - [ ] No prohibited libraries (20)
-- [ ] Passport authentication (10)
+- [x] Passport authentication (10)
 - [ ] Peer review done (10)
