@@ -5,6 +5,7 @@ import passport from 'passport';
 import { getDB } from './db/connection.js';
 import { configurePassport } from './auth/passport.js';
 import authRouter from './routes/auth.js';
+import entriesRouter from './routes/entries.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,8 +38,10 @@ app.use(express.json());
 configurePassport(passport, getDB);
 app.use(passport.initialize());
 app.use(passport.session());
-app.use('/api/auth', authRouter);
 
+// Routes (after Passport, so req.user is available)
+app.use('/api/auth', authRouter);
+app.use('/api/entries', entriesRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
