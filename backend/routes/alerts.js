@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getDB } from '../db/connection.js';
 import { requireLogin } from '../auth/requireLogin.js';
 import { loadModel } from '../ml/modelStore.js';
+import { ObjectId } from 'mongodb';
 
 // Entries at or above this probability show up as alerts
 const ALERT_THRESHOLD = 0.5;
@@ -39,4 +40,38 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.post('/:id/feedback', async (req, res) => {
+    try {
+        // Check if ID is valid
+        if (!ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: 'Invalid entry id' });
+        }
+
+        // Check that needsAttention is a boolean
+        const { needsAttention } = req.body ?? {};
+        if (typeof needsAttention !== 'boolean') {
+            return res.status(400).json({ error: 'needsAttention must be true or false' });
+        }
+
+        // Save it to the database, ensuring ownership via userId
+        const db = await getDB();
+        const updated = await db.collection('entries').findOneAndUpdate(
+            { _id: new ObjectId(req.params.id), userId: req.user._id.toString() },
+            { $set: { needsAttention } },
+            { returnDocument: 'after' }
+        );
+
+        // If entry doesn't exist or isn't owned by user
+        if (!updated) {
+            return res.status(404).json({ error: 'Entry not found' });
+        }
+
+        // Return the updated entry document
+        res.json(updated);
+    } catch (error) {
+        // Log error and return 500
+        console.error('Failed to save feedback', error);
+        res.status(500).json({ error: 'Failed to save feedback' });
+    }
+});
 export default router;
