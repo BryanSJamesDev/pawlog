@@ -1,7 +1,7 @@
 import { extractFeatures } from './features.js';
 
 // How many earlier entries count as a pet's "normal"
-const PAST_WINDOW = 14;
+export const PAST_WINDOW = 14;
 
 /**
  * Converts saved entries into feature matrices (X) and labels (y) for machine learning training.
