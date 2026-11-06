@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import LoginPage from "./pages/LoginPage.jsx";
+import LogPage from './pages/LogPage.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -53,7 +54,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/log" />} />
           <Route path="/login" element={<Navigate to="/log" />} />
-          <Route path="/log" element={<h1>Daily Log</h1>} />
+          <Route path="/log" element={<LogPage />} />
           <Route path="/history" element={<h1>History</h1>} />
           <Route path="/alerts" element={<h1>Alerts</h1>} />
           <Route path="/pets" element={<h1>Pets</h1>} />
