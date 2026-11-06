@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import EntryTable from '../components/EntryTable.jsx';
+import EntryFilters from '../components/EntryFilters.jsx';
 import '../css/HistoryPage.css';
+
+const NO_FILTERS = { pet: '', from: '', to: '', symptom: '' };
 
 export default function HistoryPage() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [filters, setFilters] = useState(NO_FILTERS);
 
   useEffect(() => {
     async function loadEntries() {
@@ -45,6 +49,29 @@ export default function HistoryPage() {
     }
   }
 
+  function handleFilterChange(name, value) {
+    setFilters((current) => ({ ...current, [name]: value }));
+  }
+
+  const petNames = [...new Set(entries.map((e) => e.petName))].sort();
+
+  const shownEntries = entries.filter((entry) => {
+    if (filters.pet && entry.petName !== filters.pet) {
+      return false;
+    }
+    if (filters.symptom && !entry.symptoms.includes(filters.symptom)) {
+      return false;
+    }
+    const day = entry.date.slice(0, 10);
+    if (filters.from && day < filters.from) {
+      return false;
+    }
+    if (filters.to && day > filters.to) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <section className="history-page">
       <p className="history-eyebrow">Their health, over time</p>
@@ -67,14 +94,24 @@ export default function HistoryPage() {
 
       {!loading && entries.length > 0 && (
         <>
-          <p className="history-count">
-            {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-          </p>
-          <EntryTable
-            entries={entries}
-            onEdit={() => {}}
-            onDelete={handleDelete}
+          <EntryFilters
+            filters={filters}
+            petNames={petNames}
+            onChange={handleFilterChange}
+            onReset={() => setFilters(NO_FILTERS)}
           />
+          <p className="history-count">
+            Showing {shownEntries.length} of {entries.length}
+          </p>
+          {shownEntries.length === 0 ? (
+            <p className="history-empty">No entries match these filters.</p>
+          ) : (
+            <EntryTable
+              entries={shownEntries}
+              onEdit={() => {}}
+              onDelete={handleDelete}
+            />
+          )}
         </>
       )}
     </section>
