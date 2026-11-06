@@ -24,12 +24,17 @@ import { ObjectId } from 'mongodb';
 // Import getDB
 import { getDB } from '../db/connection.js';
 
-// Import validateEntry and setup temporary user ID placeholder
+// Import validateEntry
 import { validateEntry } from './validateEntry.js';
-const TEMP_USER_ID = 'test-user';
+
+// Import requireLogin for users
+import { requireLogin } from '../auth/requireLogin.js';
 
 // Make a router
 const router = Router();
+
+// Every entries route needs a logged-in user
+router.use(requireLogin);
 
 // Add test route with GET
 router.get('/', async (req, res) => {
@@ -38,7 +43,7 @@ router.get('/', async (req, res) => {
         const db = await getDB();
         const entries = await db
             .collection('entries')
-            .find({ userId: TEMP_USER_ID })
+            .find({ userId: req.user._id.toString() })
             .sort({ date: -1 })
             .toArray();
 
@@ -65,7 +70,7 @@ router.post('/', async (req, res) => {
         // Build the full entry with server-controlled fields
         const entry = {
             ...clean,
-            userId: TEMP_USER_ID,
+            userId: req.user._id.toString(),
             predictedProbability: null,
             needsAttention: null,
         };
@@ -101,7 +106,7 @@ router.put('/:id', async (req, res) => {
     try {
         const db = await getDB();
         const updated = await db.collection('entries').findOneAndUpdate(
-            { _id: new ObjectId(req.params.id), userId: TEMP_USER_ID },
+            { _id: new ObjectId(req.params.id), userId: req.user._id.toString() },
             { $set: clean },
             { returnDocument: 'after' }
         );
@@ -131,7 +136,7 @@ router.delete('/:id', async (req, res) => {
         const db = await getDB();
         const result = await db.collection('entries').deleteOne({
             _id: new ObjectId(req.params.id),
-            userId: TEMP_USER_ID
+            userId: req.user._id.toString()
         });
 
         // Check if the entry actually existed and belonged to the user

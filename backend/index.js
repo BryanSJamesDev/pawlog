@@ -38,9 +38,10 @@ app.use(express.json());
 configurePassport(passport, getDB);
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Routes (after Passport, so req.user is available)
 app.use('/api/auth', authRouter);
 app.use('/api/entries', entriesRouter);
-
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
