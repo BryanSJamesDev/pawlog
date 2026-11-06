@@ -17,7 +17,7 @@ export default function Navbar({ user, onLogout }) {
       <Link to="/log" className="navbar-logo">
         🐾 PawLog
       </Link>
-      
+
       <nav aria-label="Main">
         <ul className="navbar-links">
           {LINKS.map((link) => (

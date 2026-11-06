@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
-import LoginPage from "./pages/LoginPage.jsx";
+import LoginPage from './pages/LoginPage.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);

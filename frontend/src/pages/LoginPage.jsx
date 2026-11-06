@@ -27,7 +27,7 @@ export default function LoginPage({ onLogin }) {
       } else {
         onLogin(data);
       }
-    } catch (err) {
+    } catch {
       setError('Could not reach the server');
     } finally {
       setSubmitting(false);
@@ -42,9 +42,13 @@ export default function LoginPage({ onLogin }) {
   return (
     <main className="login-page">
       <p className="login-logo">🐾 PawLog</p>
-      
+
       <form className="login-card" onSubmit={handleSubmit}>
-        <h1>{mode === 'login' ? 'Welcome back, pet parent.' : 'Create your account.'}</h1>
+        <h1>
+          {mode === 'login'
+            ? 'Welcome back, pet parent.'
+            : 'Create your account.'}
+        </h1>
         <p className="login-subtitle">
           {mode === 'login'
             ? 'Sign in to check on your pet health logs.'
@@ -70,17 +74,20 @@ export default function LoginPage({ onLogin }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            autoComplete={
+              mode === 'login' ? 'current-password' : 'new-password'
+            }
             required
           />
         </div>
-        
+
         {mode === 'register' && (
           <p className="login-hint">
-            Username: 3-30 letters, numbers, or underscores. Password: at least 8 characters.
+            Username: 3-30 letters, numbers, or underscores. Password: at least
+            8 characters.
           </p>
         )}
-        
+
         {error && (
           <p className="login-error" role="alert">
             {error}
@@ -91,22 +98,30 @@ export default function LoginPage({ onLogin }) {
           {submitting
             ? 'Please wait...'
             : mode === 'login'
-            ? 'Log in'
-            : 'Create account'}
+              ? 'Log in'
+              : 'Create account'}
         </button>
 
         <div className="login-switch-row">
           {mode === 'login' ? (
             <>
               New to PawLog?{' '}
-              <button type="button" className="login-switch" onClick={toggleMode}>
+              <button
+                type="button"
+                className="login-switch"
+                onClick={toggleMode}
+              >
                 Create an account
               </button>
             </>
           ) : (
             <>
               Already have an account?{' '}
-              <button type="button" className="login-switch" onClick={toggleMode}>
+              <button
+                type="button"
+                className="login-switch"
+                onClick={toggleMode}
+              >
                 Log in
               </button>
             </>
