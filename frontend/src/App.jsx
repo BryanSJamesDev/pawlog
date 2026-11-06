@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import LoginPage from "./pages/LoginPage.jsx";
 import LogPage from './pages/LogPage.jsx';
+import HistoryPage from './pages/HistoryPage.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -55,7 +56,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/log" />} />
           <Route path="/login" element={<Navigate to="/log" />} />
           <Route path="/log" element={<LogPage />} />
-          <Route path="/history" element={<h1>History</h1>} />
+          <Route path="/history" element={<HistoryPage />} />
           <Route path="/alerts" element={<h1>Alerts</h1>} />
           <Route path="/pets" element={<h1>Pets</h1>} />
           <Route path="/care" element={<h1>Care</h1>} />
