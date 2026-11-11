@@ -7,6 +7,7 @@ import { configurePassport } from './auth/passport.js';
 import authRouter from './routes/auth.js';
 import entriesRouter from './routes/entries.js';
 import petsRouter from './routes/pets.js';
+import careTasksRouter from './routes/careTasks.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,6 +45,7 @@ app.use(passport.session());
 app.use('/api/auth', authRouter);
 app.use('/api/entries', entriesRouter);
 app.use('/api/pets', petsRouter);
+app.use('/api/care-tasks', careTasksRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
