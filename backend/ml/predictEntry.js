@@ -3,9 +3,9 @@ import { predict } from './logisticRegression.js';
 import { PAST_WINDOW } from './buildTrainingData.js';
 
 /**
- * Scores a single pet entry using the trained logistic regression model 
+ * Scores a single pet entry using the trained logistic regression model
  * and recent historical context.
- * 
+ *
  * @param {Object} entry - The current entry to evaluate
  * @param {Array} pastEntries - Array of earlier entries for this pet
  * @param {Object} model - The trained model object containing weights and bias
@@ -19,7 +19,12 @@ export function predictEntry(entry, pastEntries, model, threshold = 0.5) {
   }
 
   // Throw a TypeError if threshold isn't a finite number from 0 to 1
-  if (typeof threshold !== 'number' || !Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+  if (
+    typeof threshold !== 'number' ||
+    !Number.isFinite(threshold) ||
+    threshold < 0 ||
+    threshold > 1
+  ) {
     throw new TypeError('Threshold must be a finite number between 0 and 1.');
   }
 
@@ -42,6 +47,6 @@ export function predictEntry(entry, pastEntries, model, threshold = 0.5) {
   // Return probability and flagged status
   return {
     probability,
-    flagged: probability >= threshold
+    flagged: probability >= threshold,
   };
 }

@@ -1,6 +1,6 @@
 /**
  * Express middleware to ensure the request is made by an authenticated user.
- * 
+ *
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
