@@ -38,118 +38,120 @@ router.use(requireLogin);
 
 // Add test route with GET
 router.get('/', async (req, res) => {
-    try {
-        // Get all health entries from the database
-        const db = await getDB();
-        const entries = await db
-            .collection('entries')
-            .find({ userId: req.user._id.toString() })
-            .sort({ date: -1 })
-            .toArray();
+  try {
+    // Get all health entries from the database
+    const db = await getDB();
+    const entries = await db
+      .collection('entries')
+      .find({ userId: req.user._id.toString() })
+      .sort({ date: -1 })
+      .toArray();
 
-        // Return the entries
-        res.json(entries);
-    } catch (error) {
-        console.error('Failed to load health entries', error);
-        res.status(500).json({ error: 'Failed to load health entries' });
-    }
+    // Return the entries
+    res.json(entries);
+  } catch (error) {
+    console.error('Failed to load health entries', error);
+    res.status(500).json({ error: 'Failed to load health entries' });
+  }
 });
 
 // Add POST route to create a new health entry
 router.post('/', async (req, res) => {
-    let clean;
-    try {
-        // Validate and sanitize input data
-        clean = validateEntry(req.body);
-    } catch (error) {
-        // Return 400 for bad user input
-        return res.status(400).json({ error: error.message });
-    }
+  let clean;
+  try {
+    // Validate and sanitize input data
+    clean = validateEntry(req.body);
+  } catch (error) {
+    // Return 400 for bad user input
+    return res.status(400).json({ error: error.message });
+  }
 
-    try {
-        // Build the full entry with server-controlled fields
-        const entry = {
-            ...clean,
-            userId: req.user._id.toString(),
-            predictedProbability: null,
-            needsAttention: null,
-        };
+  try {
+    // Build the full entry with server-controlled fields
+    const entry = {
+      ...clean,
+      userId: req.user._id.toString(),
+      predictedProbability: null,
+      needsAttention: null,
+    };
 
-        // Save entry into the database
-        const db = await getDB();
-        const result = await db.collection('entries').insertOne(entry);
+    // Save entry into the database
+    const db = await getDB();
+    const result = await db.collection('entries').insertOne(entry);
 
-        // Respond with 201 Created and the new entry including MongoDB's insertedId
-        res.status(201).json({ ...entry, _id: result.insertedId });
-    } catch (error) {
-        console.error('Failed to create health entry', error);
-        res.status(500).json({ error: 'Failed to create health entry' });
-    }
+    // Respond with 201 Created and the new entry including MongoDB's insertedId
+    res.status(201).json({ ...entry, _id: result.insertedId });
+  } catch (error) {
+    console.error('Failed to create health entry', error);
+    res.status(500).json({ error: 'Failed to create health entry' });
+  }
 });
 
 // Add PUT route to update an existing health entry by ID
 router.put('/:id', async (req, res) => {
-    // Validate the MongoDB ObjectId parameter
-    if (!ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ error: 'Invalid entry id' });
+  // Validate the MongoDB ObjectId parameter
+  if (!ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid entry id' });
+  }
+
+  // Validate input data using the same rules as POST
+  let clean;
+  try {
+    clean = validateEntry(req.body);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  // Update the entry in the database
+  try {
+    const db = await getDB();
+    const updated = await db
+      .collection('entries')
+      .findOneAndUpdate(
+        { _id: new ObjectId(req.params.id), userId: req.user._id.toString() },
+        { $set: clean },
+        { returnDocument: 'after' },
+      );
+
+    // Handle case where entry doesn't exist or isn't owned by user
+    if (!updated) {
+      return res.status(404).json({ error: 'Entry not found' });
     }
 
-    // Validate input data using the same rules as POST
-    let clean;
-    try {
-        clean = validateEntry(req.body);
-    } catch (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    // Update the entry in the database
-    try {
-        const db = await getDB();
-        const updated = await db.collection('entries').findOneAndUpdate(
-            { _id: new ObjectId(req.params.id), userId: req.user._id.toString() },
-            { $set: clean },
-            { returnDocument: 'after' }
-        );
-
-        // Handle case where entry doesn't exist or isn't owned by user
-        if (!updated) {
-            return res.status(404).json({ error: 'Entry not found' });
-        }
-
-        // Send back the updated entry
-        res.json(updated);
-    } catch (error) {
-        console.error('Failed to update health entry', error);
-        res.status(500).json({ error: 'Failed to update health entry' });
-    }
+    // Send back the updated entry
+    res.json(updated);
+  } catch (error) {
+    console.error('Failed to update health entry', error);
+    res.status(500).json({ error: 'Failed to update health entry' });
+  }
 });
 
 // Add DELETE route to remove an entry by ID
 router.delete('/:id', async (req, res) => {
-    // Validate the MongoDB ObjectId parameter
-    if (!ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ error: 'Invalid entry id' });
+  // Validate the MongoDB ObjectId parameter
+  if (!ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid entry id' });
+  }
+
+  // Delete the entry from the database
+  try {
+    const db = await getDB();
+    const result = await db.collection('entries').deleteOne({
+      _id: new ObjectId(req.params.id),
+      userId: req.user._id.toString(),
+    });
+
+    // Check if the entry actually existed and belonged to the user
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Entry not found' });
     }
 
-    // Delete the entry from the database
-    try {
-        const db = await getDB();
-        const result = await db.collection('entries').deleteOne({
-            _id: new ObjectId(req.params.id),
-            userId: req.user._id.toString()
-        });
-
-        // Check if the entry actually existed and belonged to the user
-        if (result.deletedCount === 0) {
-            return res.status(404).json({ error: 'Entry not found' });
-        }
-
-        // Send success response
-        res.json({ success: true, message: 'Entry deleted successfully' });
-    } catch (error) {
-        console.error('Failed to delete health entry', error);
-        res.status(500).json({ error: 'Failed to delete health entry' });
-    }
+    // Send success response
+    res.json({ success: true, message: 'Entry deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete health entry', error);
+    res.status(500).json({ error: 'Failed to delete health entry' });
+  }
 });
 
 // Export router
