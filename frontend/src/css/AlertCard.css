@@ -1,0 +1,117 @@
+.alert-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.alert-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.alert-top h2 {
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.alert-date {
+  color: var(--color-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.alert-badge {
+  background: var(--color-alert-soft);
+  color: var(--color-alert);
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  white-space: nowrap;
+}
+
+.alert-values {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  background: var(--color-background);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0 0;
+}
+
+.alert-values dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.alert-values dd {
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+}
+
+.alert-symptoms {
+  margin: 1rem 0 0;
+}
+
+.alert-tag {
+  display: inline-block;
+  background: var(--color-alert-soft);
+  color: var(--color-alert);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  margin-right: 0.4rem;
+  text-transform: capitalize;
+}
+
+.alert-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.alert-actions p {
+  color: var(--color-text-muted);
+  margin: 0 auto 0 0;
+}
+
+.alert-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.alert-actions button {
+  border-radius: var(--radius);
+  padding: 0.6rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.alert-actions button.alert-real[aria-pressed='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.alert-actions button.alert-false[aria-pressed='true'] {
+  background: var(--color-healthy);
+  border-color: var(--color-healthy);
+  color: #ffffff;
+}
+
+.alert-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -4,7 +4,7 @@ import Navbar from './components/Navbar.jsx';
 import LoginPage from "./pages/LoginPage.jsx";
 import LogPage from './pages/LogPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
-
+import AlertsPage from './pages/AlertsPage.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -58,7 +58,7 @@ export default function App() {
           <Route path="/login" element={<Navigate to="/log" />} />
           <Route path="/log" element={<LogPage />} />
           <Route path="/history" element={<HistoryPage />} />
-          <Route path="/alerts" element={<h1>Alerts</h1>} />
+          <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/pets" element={<h1>Pets</h1>} />
           <Route path="/care" element={<h1>Care</h1>} />
           <Route path="/how-to-use" element={<h1>How to Use</h1>} />
