@@ -1,21 +1,6 @@
 .care-page {
-  max-width: 900px;
   margin: 0 auto;
   padding: 32px 16px;
-}
-
-.care-eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #6b7280;
-  margin: 0 0 8px;
-}
-
-.care-subtitle {
-  color: #6b7280;
-  margin-bottom: 24px;
 }
 
 .care-error {
