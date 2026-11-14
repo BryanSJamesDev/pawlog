@@ -11,9 +11,11 @@ export default function AlertCard({ alert, onFeedback, saving = false }) {
       <div className="alert-top">
         <div>
           <h2>
-            <span className="alert-pet-icon" aria-hidden="true">{petIcon(alert.petSpecies)}</span>
+            <span className="alert-pet-icon" aria-hidden="true">
+              {petIcon(alert.petSpecies)}
+            </span>
             {alert.petName}
-        </h2>
+          </h2>
           <p className="alert-date">{formatDate(alert.date)}</p>
         </div>
         <span className="alert-badge">{percent}% needs attention</span>

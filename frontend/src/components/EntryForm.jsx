@@ -3,7 +3,13 @@ import PropTypes from 'prop-types';
 import '../css/EntryForm.css';
 import { SPECIES } from '../utils/petIcon.js';
 
-const SYMPTOMS = ['not eating', 'vomiting', 'diarrhea', 'low energy', 'coughing'];
+const SYMPTOMS = [
+  'not eating',
+  'vomiting',
+  'diarrhea',
+  'low energy',
+  'coughing',
+];
 
 // Today's date as YYYY-MM-DD in the user's time zone (toISOString uses UTC)
 function todayLocal() {
@@ -24,8 +30,14 @@ const EMPTY_ENTRY = {
   symptoms: [],
 };
 
-export default function EntryForm({ initialEntry = null, onSave, submitLabel = 'Save' }) {
-  const [values, setValues] = useState(initialEntry ?? { ...EMPTY_ENTRY, date: todayLocal() });
+export default function EntryForm({
+  initialEntry = null,
+  onSave,
+  submitLabel = 'Save',
+}) {
+  const [values, setValues] = useState(
+    initialEntry ?? { ...EMPTY_ENTRY, date: todayLocal() },
+  );
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -81,11 +93,11 @@ export default function EntryForm({ initialEntry = null, onSave, submitLabel = '
             value={values.petSpecies}
             onChange={handleChange}
           >
-        {SPECIES.map((s) => (
-        <option key={s.value} value={s.value}>
-            {s.icon} {s.label}
-        </option>
-        ))}
+            {SPECIES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.icon} {s.label}
+              </option>
+            ))}
           </select>
         </div>
 

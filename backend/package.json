@@ -9,7 +9,9 @@
     "start": "node index.js",
     "lint": "eslint .",
     "train": "node ml/trainModel.js",
-    "seed": "node seed/seed.js"
+    "seed": "node seed/seed.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",

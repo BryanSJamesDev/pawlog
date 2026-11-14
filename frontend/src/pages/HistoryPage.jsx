@@ -86,7 +86,7 @@ export default function HistoryPage() {
     setEntries((current) =>
       current
         .map((e) => (e._id === data._id ? data : e))
-        .sort((a, b) => b.date.localeCompare(a.date))
+        .sort((a, b) => b.date.localeCompare(a.date)),
     );
     setEditingEntry(null);
   }
@@ -150,7 +150,9 @@ export default function HistoryPage() {
       )}
 
       {!loading && !error && entries.length === 0 && (
-        <p className="history-empty">No entries yet. Add one on the Log page.</p>
+        <p className="history-empty">
+          No entries yet. Add one on the Log page.
+        </p>
       )}
 
       {!loading && entries.length > 0 && (

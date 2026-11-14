@@ -24,7 +24,9 @@ export default function EntryTable({ entries, onEdit, onDelete }) {
             <tr key={entry._id}>
               <td>{formatDate(entry.date)}</td>
               <td>
-                <span className="entry-pet-icon" aria-hidden="true">{petIcon(entry.petSpecies)}</span>
+                <span className="entry-pet-icon" aria-hidden="true">
+                  {petIcon(entry.petSpecies)}
+                </span>
                 {entry.petName}
               </td>
               <td>{entry.food}</td>
@@ -74,7 +76,7 @@ EntryTable.propTypes = {
       activity: PropTypes.number.isRequired,
       weight: PropTypes.number.isRequired,
       symptoms: PropTypes.arrayOf(PropTypes.string).isRequired,
-    })
+    }),
   ).isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,

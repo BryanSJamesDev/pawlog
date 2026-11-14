@@ -78,10 +78,7 @@ function PetForm({ initialPet, onSave, onCancel }) {
 
         <label className="pet-form-field">
           Vet name
-          <input
-            value={vetName}
-            onChange={(e) => setVetName(e.target.value)}
-          />
+          <input value={vetName} onChange={(e) => setVetName(e.target.value)} />
         </label>
 
         <label className="pet-form-field">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import AlertCard from '../components/AlertCard.jsx';
 import '../css/AlertsPage.css';
@@ -57,7 +56,7 @@ export default function AlertsPage() {
       }
 
       setAlerts((current) =>
-        current.map((a) => (a._id === data._id ? data : a))
+        current.map((a) => (a._id === data._id ? data : a)),
       );
     } catch (err) {
       setError(err.message);
@@ -87,7 +86,7 @@ export default function AlertsPage() {
       setTrainedOn(data.trainedOn);
 
       setMessage(
-        `Retrained on ${data.trainedOn} entries. New accuracy: ${Math.round(data.accuracy * 100)}%.`
+        `Retrained on ${data.trainedOn} entries. New accuracy: ${Math.round(data.accuracy * 100)}%.`,
       );
     } catch (err) {
       setError(err.message);
@@ -120,17 +119,13 @@ export default function AlertsPage() {
 
           {trainedOn !== null && (
             <p className="alerts-trained">
-              Trained on {trainedOn} entries. Your feedback helps it tell an
-              off day from a real change.
+              Trained on {trainedOn} entries. Your feedback helps it tell an off
+              day from a real change.
             </p>
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={handleRetrain}
-          disabled={retraining}
-        >
+        <button type="button" onClick={handleRetrain} disabled={retraining}>
           {retraining ? 'Retraining...' : 'Retrain with my feedback'}
         </button>
       </div>
@@ -154,9 +149,7 @@ export default function AlertsPage() {
           <h2>To review ({toReview.length})</h2>
 
           {toReview.length === 0 ? (
-            <p className="alerts-empty">
-              Nothing to review right now.
-            </p>
+            <p className="alerts-empty">Nothing to review right now.</p>
           ) : (
             toReview.map((a) => (
               <AlertCard
@@ -186,8 +179,8 @@ export default function AlertsPage() {
       )}
 
       <p className="alerts-note">
-        Alerts are not veterinary advice. If you’re concerned about symptoms
-        or a sudden change, contact your veterinarian.
+        Alerts are not veterinary advice. If you’re concerned about symptoms or
+        a sudden change, contact your veterinarian.
       </p>
     </section>
   );

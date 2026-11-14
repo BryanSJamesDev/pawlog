@@ -3,7 +3,9 @@ import '../css/PetList.css';
 
 function PetList({ pets, onEdit, onDelete }) {
   if (pets.length === 0) {
-    return <p className="pet-list-empty">No pets yet. Add your first one above.</p>;
+    return (
+      <p className="pet-list-empty">No pets yet. Add your first one above.</p>
+    );
   }
 
   return (
