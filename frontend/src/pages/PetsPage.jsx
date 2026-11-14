@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PetForm from '../components/PetForm.jsx';
 import PetList from '../components/PetList.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 import '../css/PetsPage.css';
 
 function sortByName(pets) {
@@ -93,11 +94,11 @@ export default function PetsPage() {
 
   return (
     <section className="pets-page">
-      <p className="pets-eyebrow">Your family</p>
-      <h1>Meet the pets you look after.</h1>
-      <p className="pets-subtitle">
-        Add each pet once, then use them everywhere in PawLog.
-      </p>
+      <PageHeader
+        eyebrow="Your family"
+        title="Meet the pets you look after."
+        subtitle="Add each pet once, then use them everywhere in PawLog."
+      />
 
       {error && (
         <p className="pets-error" role="alert">

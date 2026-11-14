@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import EntryTable from '../components/EntryTable.jsx';
 import EntryFilters from '../components/EntryFilters.jsx';
 import EntryForm from '../components/EntryForm.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 import '../css/HistoryPage.css';
 
 const NO_FILTERS = { pet: '', from: '', to: '', symptom: '' };
@@ -116,11 +118,12 @@ export default function HistoryPage() {
 
   return (
     <section className="history-page">
-      <p className="history-eyebrow">Their health, over time</p>
-      <h1>Every little detail, in one place.</h1>
-      <p className="history-subtitle">
-        Review past check-ins, track trends, and manage your logs.
-      </p>
+      <PageHeader
+        eyebrow="Their health, over time"
+        title="Every little detail, in one place."
+        subtitle="Review past check-ins, spot patterns, and keep your pet’s story up to date."
+        action={<Link to="/log">+ New entry</Link>}
+      />
 
       {loading && <p>Loading entries...</p>}
 
@@ -163,15 +166,12 @@ export default function HistoryPage() {
             onChange={handleFilterChange}
             onReset={() => setFilters(NO_FILTERS)}
           />
-          <p className="history-count">
-            Showing {shownEntries.length} of {entries.length}{' '}
-            {entries.length === 1 ? 'entry' : 'entries'}
-          </p>
           {shownEntries.length === 0 ? (
             <p className="history-empty">No entries match these filters.</p>
           ) : (
             <EntryTable
               entries={shownEntries}
+              total={entries.length}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

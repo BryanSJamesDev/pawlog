@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import CareTaskForm from '../components/CareTaskForm.jsx';
 import CareTaskList from '../components/CareTaskList.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 import '../css/CarePage.css';
 
 async function getJson(url, message) {
@@ -139,11 +140,11 @@ export default function CarePage() {
 
   return (
     <section className="care-page">
-      <p className="care-eyebrow">Stay on top of it</p>
-      <h1>Meds, shots, and vet visits.</h1>
-      <p className="care-subtitle">
-        See what is overdue, what is coming up, and check things off.
-      </p>
+      <PageHeader
+        eyebrow="Stay on top of it"
+        title="Meds, shots, and vet visits."
+        subtitle="See what's overdue, what's coming up, and check things off."
+      />
 
       {error && (
         <p className="care-error" role="alert">

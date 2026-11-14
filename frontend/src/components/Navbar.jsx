@@ -11,18 +11,29 @@ const LINKS = [
   { to: '/how-to-use', label: 'How to Use' },
 ];
 
-export default function Navbar({ user, onLogout }) {
+export default function Navbar({ user, onLogout, alertCount = 0 }) {
   return (
     <header className="navbar">
       <Link to="/log" className="navbar-logo">
-        🐾 PawLog
+        <span className="navbar-logo-icon">
+          <img src="/favicon.svg" alt="" />
+        </span>
+        PawLog
       </Link>
 
       <nav aria-label="Main">
         <ul className="navbar-links">
           {LINKS.map((link) => (
             <li key={link.to}>
-              <NavLink to={link.to}>{link.label}</NavLink>
+              <NavLink to={link.to}>
+                {link.label}
+                {link.to === '/alerts' && alertCount > 0 && (
+                  <span className="navbar-badge">
+                    {alertCount}
+                    <span className="visually-hidden"> to review</span>
+                  </span>
+                )}
+              </NavLink>
             </li>
           ))}
         </ul>
@@ -43,4 +54,5 @@ Navbar.propTypes = {
     username: PropTypes.string.isRequired,
   }).isRequired,
   onLogout: PropTypes.func.isRequired,
+  alertCount: PropTypes.number,
 };

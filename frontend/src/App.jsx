@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import LogPage from './pages/LogPage.jsx';
@@ -7,10 +7,13 @@ import HistoryPage from './pages/HistoryPage.jsx';
 import AlertsPage from './pages/AlertsPage.jsx';
 import PetsPage from './pages/PetsPage.jsx';
 import CarePage from './pages/CarePage.jsx';
+import Footer from './components/Footer.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [alertCount, setAlertCount] = useState(0);
+  const location = useLocation();
 
   useEffect(() => {
     async function checkLogin() {
@@ -27,6 +30,28 @@ export default function App() {
     }
     checkLogin();
   }, []);
+
+  // Count alerts still waiting for feedback, refreshed on every page change
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    async function loadAlertCount() {
+      try {
+        const response = await fetch('/api/alerts');
+        if (!response.ok) {
+          return;
+        }
+        const data = await response.json();
+        setAlertCount(
+          data.alerts.filter((a) => a.needsAttention === null).length,
+        );
+      } catch {
+        // The badge is a nice extra, so a failure just leaves the old count
+      }
+    }
+    loadAlertCount();
+  }, [user, location.pathname]);
 
   async function handleLogout() {
     try {
@@ -53,20 +78,24 @@ export default function App() {
 
   return (
     <>
-      <Navbar user={user} onLogout={handleLogout} />
+      <Navbar user={user} onLogout={handleLogout} alertCount={alertCount} />
       <main className="app-main">
         <Routes>
           <Route path="/" element={<Navigate to="/log" />} />
           <Route path="/login" element={<Navigate to="/log" />} />
           <Route path="/log" element={<LogPage />} />
           <Route path="/history" element={<HistoryPage />} />
-          <Route path="/alerts" element={<AlertsPage />} />
+          <Route
+            path="/alerts"
+            element={<AlertsPage onToReviewChange={setAlertCount} />}
+          />
           <Route path="/pets" element={<PetsPage />} />
           <Route path="/care" element={<CarePage />} />
           <Route path="/how-to-use" element={<h1>How to Use</h1>} />
           <Route path="*" element={<h1>Page not found</h1>} />
         </Routes>
       </main>
+      <Footer />
     </>
   );
 }

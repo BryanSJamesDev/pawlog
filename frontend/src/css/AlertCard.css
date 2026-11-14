@@ -119,3 +119,26 @@
 .alert-pet-icon {
   margin-right: 0.5rem;
 }
+
+.alert-headline {
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 1rem 0 0.25rem;
+}
+
+.alert-more {
+  color: var(--color-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.alert-usual {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-top: 0.2rem;
+}
+
+.alert-value-changed dd {
+  color: var(--color-alert);
+}

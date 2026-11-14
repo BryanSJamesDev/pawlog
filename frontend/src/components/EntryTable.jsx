@@ -3,9 +3,17 @@ import '../css/EntryTable.css';
 import { formatDate } from '../utils/formatDate.js';
 import { petIcon } from '../utils/petIcon.js';
 
-export default function EntryTable({ entries, onEdit, onDelete }) {
+export default function EntryTable({ entries, total, onEdit, onDelete }) {
   return (
     <div className="entry-table-wrap">
+      <div className="entry-table-header">
+        <p className="entry-table-count">
+          {entries.length === total
+            ? `${total} ${total === 1 ? 'entry' : 'entries'}`
+            : `Showing ${entries.length} of ${total} entries`}
+        </p>
+        <p className="entry-table-sort">Newest first</p>
+      </div>
       <table className="entry-table">
         <thead>
           <tr>
@@ -76,6 +84,7 @@ EntryTable.propTypes = {
       activity: PropTypes.number.isRequired,
       weight: PropTypes.number.isRequired,
       symptoms: PropTypes.arrayOf(PropTypes.string).isRequired,
+      total: PropTypes.number.isRequired,
     }),
   ).isRequired,
   onEdit: PropTypes.func.isRequired,

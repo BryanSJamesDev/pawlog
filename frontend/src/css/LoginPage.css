@@ -12,11 +12,29 @@
   font-weight: 700;
   color: var(--color-primary);
   margin: 0 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.login-logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 10px;
+  background: var(--color-highlight-soft);
+}
+
+.login-logo-icon img {
+  width: 1.8rem;
+  height: 1.8rem;
 }
 
 .login-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 520px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
