@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import AlertCard from '../components/AlertCard.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import '../css/AlertsPage.css';
 
-export default function AlertsPage() {
+export default function AlertsPage({ onToReviewChange }) {
   const [alerts, setAlerts] = useState([]);
   const [accuracy, setAccuracy] = useState(null);
   const [trainedOn, setTrainedOn] = useState(null);
@@ -56,8 +57,9 @@ export default function AlertsPage() {
         throw new Error(data.error || 'Could not save your answer');
       }
 
+      // Merge, so the alert keeps its "usual" values (the feedback response doesn't include them)
       setAlerts((current) =>
-        current.map((a) => (a._id === data._id ? data : a)),
+        current.map((a) => (a._id === data._id ? { ...a, ...data } : a)),
       );
     } catch (err) {
       setError(err.message);
@@ -99,6 +101,13 @@ export default function AlertsPage() {
   // Separate alerts that still need feedback from reviewed alerts.
   const toReview = alerts.filter((a) => a.needsAttention === null);
   const reviewed = alerts.filter((a) => a.needsAttention !== null);
+
+  // Keep the navbar badge in sync whenever the to-review count changes
+  useEffect(() => {
+    if (!loading && onToReviewChange) {
+      onToReviewChange(toReview.length);
+    }
+  }, [loading, toReview.length, onToReviewChange]);
 
   return (
     <section className="alerts-page">
@@ -183,3 +192,7 @@ export default function AlertsPage() {
     </section>
   );
 }
+
+AlertsPage.propTypes = {
+  onToReviewChange: PropTypes.func,
+};

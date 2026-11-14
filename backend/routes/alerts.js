@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
       })
       .sort({ date: -1 })
       .toArray();
-    
+
     // Add each alert's "usual" values: the average of that pet's earlier entries
     const entriesCollection = db.collection('entries');
     const alertsWithUsual = await Promise.all(
