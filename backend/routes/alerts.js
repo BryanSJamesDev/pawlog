@@ -4,6 +4,8 @@ import { requireLogin } from '../auth/requireLogin.js';
 import { ObjectId } from 'mongodb';
 import { loadModel, saveModel } from '../ml/modelStore.js';
 import { trainFromEntries } from '../ml/trainModel.js';
+import { getBaseline } from '../ml/features.js';
+import { PAST_WINDOW } from '../ml/buildTrainingData.js';
 
 // Entries at or above this probability show up as alerts
 const ALERT_THRESHOLD = 0.5;
@@ -26,12 +28,29 @@ router.get('/', async (req, res) => {
       })
       .sort({ date: -1 })
       .toArray();
+    
+    // Add each alert's "usual" values: the average of that pet's earlier entries
+    const entriesCollection = db.collection('entries');
+    const alertsWithUsual = await Promise.all(
+      alerts.map(async (alert) => {
+        const past = await entriesCollection
+          .find({
+            userId: alert.userId,
+            petName: alert.petName,
+            date: { $lt: alert.date },
+          })
+          .sort({ date: -1 })
+          .limit(PAST_WINDOW)
+          .toArray();
+        return { ...alert, usual: getBaseline(past) };
+      }),
+    );
 
     // Load the model to retrieve accuracy and training statistics
     const model = await loadModel(db.collection('models'));
 
     res.json({
-      alerts,
+      alerts: alertsWithUsual,
       accuracy: model?.accuracy ?? null,
       trainedOn: model?.trainedOn ?? null,
     });
