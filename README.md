@@ -33,7 +33,7 @@ Coming soon, once the app is deployed.
 
 - **Daily health log:** create, edit, delete, and filter entries by pet, date range, and symptom
 - **ML health alerts:** each entry gets a probability that it needs attention; owners mark alerts as a real problem or a false alarm, and the model retrains on that feedback
-- **Pet profiles:** name, species, breed, age, and vet info
+- **Pet profiles:** name, species, breed, birth date, weight, and vet info
 - **Care schedule:** meds, vaccines, and vet visits with repeat schedules and an upcoming/overdue dashboard
 - **Accounts:** register and log in with Passport; each user only sees their own pets and entries
 
