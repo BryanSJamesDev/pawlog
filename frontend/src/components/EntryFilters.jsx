@@ -1,7 +1,13 @@
 import PropTypes from 'prop-types';
 import '../css/EntryFilters.css';
 
-const SYMPTOMS = ['not eating', 'vomiting', 'diarrhea', 'low energy', 'coughing'];
+const SYMPTOMS = [
+  'not eating',
+  'vomiting',
+  'diarrhea',
+  'low energy',
+  'coughing',
+];
 
 export default function EntryFilters({ filters, petNames, onChange, onReset }) {
   return (

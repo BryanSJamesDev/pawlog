@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
-import LoginPage from "./pages/LoginPage.jsx";
+import LoginPage from './pages/LoginPage.jsx';
 import LogPage from './pages/LogPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AlertsPage from './pages/AlertsPage.jsx';

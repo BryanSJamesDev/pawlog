@@ -16,9 +16,7 @@ const REPEATS = [
 ];
 
 function CareTaskForm({ pets, initialTask, onSave, onCancel }) {
-  const [petId, setPetId] = useState(
-    initialTask?.petId || pets[0]?._id || '',
-  );
+  const [petId, setPetId] = useState(initialTask?.petId || pets[0]?._id || '');
   const [type, setType] = useState(initialTask?.type || 'med');
   const [title, setTitle] = useState(initialTask?.title || '');
   const [dueDate, setDueDate] = useState(

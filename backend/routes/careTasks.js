@@ -21,7 +21,8 @@ function cleanTask(body) {
   const title = typeof body.title === 'string' ? body.title.trim() : '';
   if (!title) return { error: 'Title is required' };
 
-  if (!ObjectId.isValid(body.petId)) return { error: 'Valid petId is required' };
+  if (!ObjectId.isValid(body.petId))
+    return { error: 'Valid petId is required' };
 
   if (!TYPES.includes(body.type)) {
     return { error: `Type must be one of: ${TYPES.join(', ')}` };
@@ -38,7 +39,13 @@ function cleanTask(body) {
   }
 
   return {
-    value: { petId: String(body.petId), type: body.type, title, repeat, dueDate },
+    value: {
+      petId: String(body.petId),
+      type: body.type,
+      title,
+      repeat,
+      dueDate,
+    },
   };
 }
 
