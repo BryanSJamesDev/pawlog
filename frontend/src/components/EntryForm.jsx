@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import '../css/EntryForm.css';
+import { SPECIES } from '../utils/petIcon.js';
 
 const SYMPTOMS = ['not eating', 'vomiting', 'diarrhea', 'low energy', 'coughing'];
 
@@ -80,9 +81,11 @@ export default function EntryForm({ initialEntry = null, onSave, submitLabel = '
             value={values.petSpecies}
             onChange={handleChange}
           >
-            <option value="dog">Dog</option>
-            <option value="cat">Cat</option>
-            <option value="other">Other</option>
+        {SPECIES.map((s) => (
+        <option key={s.value} value={s.value}>
+            {s.icon} {s.label}
+        </option>
+        ))}
           </select>
         </div>
 

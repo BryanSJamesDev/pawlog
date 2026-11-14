@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { formatDate } from '../utils/formatDate.js';
 import '../css/AlertCard.css';
+import { petIcon } from '../utils/petIcon.js';
 
 export default function AlertCard({ alert, onFeedback, saving = false }) {
   const percent = Math.round(alert.predictedProbability * 100);
@@ -9,7 +10,10 @@ export default function AlertCard({ alert, onFeedback, saving = false }) {
     <article className="alert-card">
       <div className="alert-top">
         <div>
-          <h2>{alert.petName}</h2>
+          <h2>
+            <span className="alert-pet-icon" aria-hidden="true">{petIcon(alert.petSpecies)}</span>
+            {alert.petName}
+        </h2>
           <p className="alert-date">{formatDate(alert.date)}</p>
         </div>
         <span className="alert-badge">{percent}% needs attention</span>
