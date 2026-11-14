@@ -5,7 +5,7 @@ export const PAST_WINDOW = 14;
 
 /**
  * Converts saved entries into feature matrices (X) and labels (y) for machine learning training.
- * 
+ *
  * @param {Array} entries - Array of entry objects from the database
  * @returns {{ X: Array, y: Array }} The feature vectors and corresponding binary labels
  */
@@ -17,8 +17,13 @@ export function buildTrainingData(entries) {
 
   // Validate every entry has string userId, petName, and a valid date
   for (const entry of entries) {
-    if (typeof entry?.userId !== 'string' || typeof entry?.petName !== 'string') {
-      throw new TypeError("Every entry must have a string 'userId' and 'petName'.");
+    if (
+      typeof entry?.userId !== 'string' ||
+      typeof entry?.petName !== 'string'
+    ) {
+      throw new TypeError(
+        "Every entry must have a string 'userId' and 'petName'.",
+      );
     }
     if (entry.date == null || Number.isNaN(new Date(entry.date).getTime())) {
       throw new TypeError("Every entry must have a valid 'date'.");
@@ -41,7 +46,9 @@ export function buildTrainingData(entries) {
   // Process each pet's entries
   for (const list of petGroups.values()) {
     // Sort a copy oldest first
-    const sorted = [...list].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = [...list].sort(
+      (a, b) => new Date(a.date) - new Date(b.date),
+    );
 
     for (let i = 0; i < sorted.length; i++) {
       const entry = sorted[i];
@@ -53,7 +60,7 @@ export function buildTrainingData(entries) {
         X.push(extractFeatures(entry, past));
         y.push(entry.needsAttention ? 1 : 0);
       }
-      // Note: Entries with null/unreviewed needsAttention are skipped for X/y 
+      // Note: Entries with null/unreviewed needsAttention are skipped for X/y
       // but remain in 'sorted' so they contribute to 'past' history for subsequent entries.
     }
   }

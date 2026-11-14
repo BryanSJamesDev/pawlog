@@ -5,15 +5,19 @@ const FEATURE_COUNT = 10;
 
 /**
  * Validates that a model object has valid weights and bias.
- * 
+ *
  * @param {Object} model - Model object containing weights and bias
  * @returns {boolean} True if valid, false otherwise
  */
 function isValidModel(model) {
-  if (!model || !Array.isArray(model.weights) || model.weights.length !== FEATURE_COUNT) {
+  if (
+    !model ||
+    !Array.isArray(model.weights) ||
+    model.weights.length !== FEATURE_COUNT
+  ) {
     return false;
   }
-  
+
   // Check that every weight is a finite number
   for (const w of model.weights) {
     if (typeof w !== 'number' || !Number.isFinite(w)) {
@@ -31,7 +35,7 @@ function isValidModel(model) {
 
 /**
  * Saves or updates the trained model in the database collection using an upsert.
- * 
+ *
  * @param {Object} collection - MongoDB collection mock or instance
  * @param {Object} model - Model containing weights and bias
  * @param {Object} [details={}] - Additional details like accuracy and trainedOn counts
@@ -46,7 +50,7 @@ export async function saveModel(collection, model, details = {}) {
   // Throw a TypeError if model weights or bias are invalid
   if (!isValidModel(model)) {
     throw new TypeError(
-      `Model must have exactly ${FEATURE_COUNT} finite numeric weights and a finite numeric bias.`
+      `Model must have exactly ${FEATURE_COUNT} finite numeric weights and a finite numeric bias.`,
     );
   }
 
@@ -69,7 +73,7 @@ export async function saveModel(collection, model, details = {}) {
 
 /**
  * Loads the current model from the database collection.
- * 
+ *
  * @param {Object} collection - MongoDB collection mock or instance
  * @returns {Promise<Object|null>} The stored model document, or null if none exists
  */

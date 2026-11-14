@@ -1,0 +1,59 @@
+.pet-form {
+    background: #ffffff;
+    border: 1px solid #e3e7f0;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  
+  .pet-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+  }
+  
+  .pet-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  .pet-form-field input,
+  .pet-form-field select {
+    padding: 10px 12px;
+    border: 1px solid #d5dae6;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 400;
+  }
+  
+  .pet-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .pet-form-save {
+    background: #243a8a;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .pet-form-cancel {
+    background: transparent;
+    border: 1px solid #d5dae6;
+    border-radius: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  
+  @media (max-width: 600px) {
+    .pet-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
