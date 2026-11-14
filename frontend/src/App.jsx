@@ -7,6 +7,7 @@ import HistoryPage from './pages/HistoryPage.jsx';
 import AlertsPage from './pages/AlertsPage.jsx';
 import PetsPage from './pages/PetsPage.jsx';
 import CarePage from './pages/CarePage.jsx';
+import HowToUsePage from './pages/HowToUsePage.jsx';
 import Footer from './components/Footer.jsx';
 
 export default function App() {
@@ -91,7 +92,7 @@ export default function App() {
           />
           <Route path="/pets" element={<PetsPage />} />
           <Route path="/care" element={<CarePage />} />
-          <Route path="/how-to-use" element={<h1>How to Use</h1>} />
+          <Route path="/how-to-use" element={<HowToUsePage />} />
           <Route path="*" element={<h1>Page not found</h1>} />
         </Routes>
       </main>
