@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import EntryForm from '../components/EntryForm.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 import '../css/LogPage.css';
 
 export default function LogPage() {
@@ -23,11 +24,11 @@ export default function LogPage() {
 
   return (
     <section className="log-page">
-      <p className="log-eyebrow">Daily check-in</p>
-      <h1>How is your pet doing today?</h1>
-      <p className="log-subtitle">
-        A few everyday details help you see the bigger picture of their health.
-      </p>
+      <PageHeader
+        eyebrow="Daily check-in"
+        title="How is your pet doing today?"
+        subtitle="A few everyday details help you see the bigger picture of their health."
+      />
 
       {message && (
         <p className="log-success" role="status">

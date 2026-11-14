@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import AlertCard from '../components/AlertCard.jsx';
+import PageHeader from '../components/PageHeader.jsx';
 import '../css/AlertsPage.css';
 
 export default function AlertsPage() {
@@ -101,14 +102,11 @@ export default function AlertsPage() {
 
   return (
     <section className="alerts-page">
-      <p className="alerts-eyebrow">A little extra attention</p>
-
-      <h1>Notice changes. Take the next step.</h1>
-
-      <p className="alerts-subtitle">
-        PawLog’s model looks for unusual days, so you can check in sooner.
-      </p>
-
+      <PageHeader
+        eyebrow="A little extra attention"
+        title="Notice changes. Take the next step."
+        subtitle="PawLog’s model looks for unusual days, so you can check in sooner."
+      />
       <div className="alerts-banner">
         <div>
           <p className="alerts-accuracy">
