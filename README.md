@@ -92,6 +92,14 @@ npm run train
 
 `seed` adds 1,500 synthetic health entries. `train` trains the model on them and saves it to the database.
 
+To also add 200 sample pets and 1,200 care tasks, run this from the `backend` folder:
+
+```
+node seed/seedPetsAndTasks.js
+```
+
+It only replaces sample data, and never touches real accounts.
+
 ### 4. Start the backend
 
 ```
