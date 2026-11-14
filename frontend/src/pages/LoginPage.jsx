@@ -41,7 +41,7 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <main className="login-page">
-       <p className="login-logo">
+      <p className="login-logo">
         <span className="login-logo-icon">
           <img src="/favicon.svg" alt="" />
         </span>

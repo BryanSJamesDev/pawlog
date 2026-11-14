@@ -140,11 +140,11 @@ export default function CarePage() {
 
   return (
     <section className="care-page">
-    <PageHeader
-      eyebrow="Stay on top of it"
-      title="Meds, shots, and vet visits."
-      subtitle="See what's overdue, what's coming up, and check things off."
-    />
+      <PageHeader
+        eyebrow="Stay on top of it"
+        title="Meds, shots, and vet visits."
+        subtitle="See what's overdue, what's coming up, and check things off."
+      />
 
       {error && (
         <p className="care-error" role="alert">

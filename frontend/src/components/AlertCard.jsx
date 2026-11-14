@@ -61,7 +61,9 @@ export default function AlertCard({ alert, onFeedback, saving = false }) {
         {VALUE_FIELDS.map((field) => (
           <div
             key={field.key}
-            className={changedKeys.has(field.key) ? 'alert-value-changed' : undefined}
+            className={
+              changedKeys.has(field.key) ? 'alert-value-changed' : undefined
+            }
           >
             <dt>{field.label}</dt>
             <dd>

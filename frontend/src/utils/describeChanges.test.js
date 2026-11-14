@@ -51,30 +51,53 @@ test('percentChange returns null for NaN and Infinity', () => {
 
 // describeChanges: normal cases
 test("describeChanges describes Jake's sick day, biggest change first", () => {
-  const changes = describeChanges({ food: 1.5, water: 3, activity: 10, weight: 79 }, usual);
+  const changes = describeChanges(
+    { food: 1.5, water: 3, activity: 10, weight: 79 },
+    usual,
+  );
   assert.deepEqual(
     changes.map((c) => c.text),
-    ['Active 67% less than usual', 'Ate 62% less than usual', 'Drank 25% less than usual'],
+    [
+      'Active 67% less than usual',
+      'Ate 62% less than usual',
+      'Drank 25% less than usual',
+    ],
   );
 });
 
 test('describeChanges includes the key and percent for each change', () => {
-  const [first] = describeChanges({ food: 1, water: 4, activity: 30, weight: 80 }, usual);
-  assert.deepEqual(first, { key: 'food', percent: -75, text: 'Ate 75% less than usual' });
+  const [first] = describeChanges(
+    { food: 1, water: 4, activity: 30, weight: 80 },
+    usual,
+  );
+  assert.deepEqual(first, {
+    key: 'food',
+    percent: -75,
+    text: 'Ate 75% less than usual',
+  });
 });
 
 test('describeChanges describes increases with "more"', () => {
-  const [first] = describeChanges({ food: 4, water: 8, activity: 30, weight: 80 }, usual);
+  const [first] = describeChanges(
+    { food: 4, water: 8, activity: 30, weight: 80 },
+    usual,
+  );
   assert.equal(first.text, 'Drank 100% more than usual');
 });
 
 test('describeChanges returns nothing for a normal day', () => {
-  assert.deepEqual(describeChanges({ food: 4, water: 4.2, activity: 28, weight: 80 }, usual), []);
+  assert.deepEqual(
+    describeChanges({ food: 4, water: 4.2, activity: 28, weight: 80 }, usual),
+    [],
+  );
 });
 
 // describeChanges: the 20% cutoff
 test('a change of exactly 20% counts', () => {
-  const changes = describeChanges({ food: 3.2, water: 4, activity: 30, weight: 80 }, usual);
+  const changes = describeChanges(
+    { food: 3.2, water: 4, activity: 30, weight: 80 },
+    usual,
+  );
   assert.deepEqual(
     changes.map((c) => c.key),
     ['food'],
@@ -82,13 +105,19 @@ test('a change of exactly 20% counts', () => {
 });
 
 test('a change of 19% does not count', () => {
-  const changes = describeChanges({ food: 3.25, water: 4, activity: 30, weight: 80 }, usual);
+  const changes = describeChanges(
+    { food: 3.25, water: 4, activity: 30, weight: 80 },
+    usual,
+  );
   assert.deepEqual(changes, []);
 });
 
 // describeChanges: missing data
 test('describeChanges returns nothing when there is no usual (first entry)', () => {
-  assert.deepEqual(describeChanges({ food: 1, water: 1, activity: 1, weight: 1 }, null), []);
+  assert.deepEqual(
+    describeChanges({ food: 1, water: 1, activity: 1, weight: 1 }, null),
+    [],
+  );
 });
 
 test('describeChanges returns nothing for a missing entry', () => {
