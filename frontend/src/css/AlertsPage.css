@@ -1,0 +1,57 @@
+.alerts-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.alerts-page h1 {
+  font-size: 2.25rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem;
+}
+
+.alerts-subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 2rem;
+}
+
+.alerts-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--color-highlight-soft);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.alerts-accuracy {
+  font-size: 1.4rem;
+  color: var(--color-primary);
+  margin: 0 0 0.25rem;
+}
+
+.alerts-trained {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.alerts-banner button {
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.7rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.alerts-banner button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

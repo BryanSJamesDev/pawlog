@@ -1,15 +1,7 @@
 import PropTypes from 'prop-types';
 import '../css/EntryTable.css';
-
-// Dates are saved as midnight UTC, so format in UTC or they show a day early in New York
-function formatDate(date) {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+import { formatDate } from '../utils/formatDate.js';
+import { petIcon } from '../utils/petIcon.js';
 
 export default function EntryTable({ entries, onEdit, onDelete }) {
   return (
@@ -31,7 +23,10 @@ export default function EntryTable({ entries, onEdit, onDelete }) {
           {entries.map((entry) => (
             <tr key={entry._id}>
               <td>{formatDate(entry.date)}</td>
-              <td>{entry.petName}</td>
+              <td>
+                <span className="entry-pet-icon" aria-hidden="true">{petIcon(entry.petSpecies)}</span>
+                {entry.petName}
+              </td>
               <td>{entry.food}</td>
               <td>{entry.water}</td>
               <td>{entry.activity}</td>
@@ -72,6 +67,7 @@ EntryTable.propTypes = {
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
       petName: PropTypes.string.isRequired,
+      petSpecies: PropTypes.string,
       date: PropTypes.string.isRequired,
       food: PropTypes.number.isRequired,
       water: PropTypes.number.isRequired,

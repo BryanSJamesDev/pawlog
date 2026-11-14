@@ -6,6 +6,7 @@ import { getDB } from './db/connection.js';
 import { configurePassport } from './auth/passport.js';
 import authRouter from './routes/auth.js';
 import entriesRouter from './routes/entries.js';
+import alertsRouter from './routes/alerts.js';
 import petsRouter from './routes/pets.js';
 import careTasksRouter from './routes/careTasks.js';
 
@@ -44,6 +45,7 @@ app.use(passport.session());
 // Routes (after Passport, so req.user is available)
 app.use('/api/auth', authRouter);
 app.use('/api/entries', entriesRouter);
+app.use('/api/alerts', alertsRouter);
 app.use('/api/pets', petsRouter);
 app.use('/api/care-tasks', careTasksRouter);
 

@@ -53,3 +53,7 @@
 .entry-table button.entry-delete {
   color: var(--color-alert);
 }
+
+.entry-pet-icon {
+  margin-right: 0.5rem;
+}
