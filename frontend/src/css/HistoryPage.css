@@ -1,8 +1,3 @@
-.history-count {
-  font-weight: 600;
-  margin: 0 0 1rem;
-}
-
 .history-error {
   background: var(--color-alert-soft);
   color: var(--color-alert);

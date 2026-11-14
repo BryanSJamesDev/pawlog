@@ -166,15 +166,12 @@ export default function HistoryPage() {
             onChange={handleFilterChange}
             onReset={() => setFilters(NO_FILTERS)}
           />
-          <p className="history-count">
-            Showing {shownEntries.length} of {entries.length}{' '}
-            {entries.length === 1 ? 'entry' : 'entries'}
-          </p>
           {shownEntries.length === 0 ? (
             <p className="history-empty">No entries match these filters.</p>
           ) : (
             <EntryTable
               entries={shownEntries}
+              total={entries.length}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
