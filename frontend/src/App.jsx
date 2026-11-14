@@ -7,6 +7,7 @@ import HistoryPage from './pages/HistoryPage.jsx';
 import AlertsPage from './pages/AlertsPage.jsx';
 import PetsPage from './pages/PetsPage.jsx';
 import CarePage from './pages/CarePage.jsx';
+import Footer from './components/Footer.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="*" element={<h1>Page not found</h1>} />
         </Routes>
       </main>
+      <Footer />
     </>
   );
 }
