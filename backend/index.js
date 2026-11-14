@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import session from 'express-session';
 import passport from 'passport';
@@ -51,6 +53,19 @@ app.use('/api/care-tasks', careTasksRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Unknown API paths get a JSON 404 instead of the React page
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Serve the built React app (created by `npm run build` in the frontend folder)
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.join(currentDir, '..', 'frontend', 'dist');
+app.use(express.static(frontendDist));
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
 app.listen(PORT, () => {
