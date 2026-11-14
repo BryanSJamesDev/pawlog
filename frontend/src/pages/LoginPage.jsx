@@ -41,7 +41,12 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <main className="login-page">
-      <p className="login-logo">🐾 PawLog</p>
+       <p className="login-logo">
+        <span className="login-logo-icon">
+          <img src="/favicon.svg" alt="" />
+        </span>
+        PawLog
+      </p>
 
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>

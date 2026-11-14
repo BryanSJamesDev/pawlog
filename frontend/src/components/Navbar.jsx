@@ -15,7 +15,10 @@ export default function Navbar({ user, onLogout }) {
   return (
     <header className="navbar">
       <Link to="/log" className="navbar-logo">
-        🐾 PawLog
+        <span className="navbar-logo-icon">
+          <img src="/favicon.svg" alt="" />
+        </span>
+        PawLog
       </Link>
 
       <nav aria-label="Main">
