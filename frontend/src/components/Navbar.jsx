@@ -1,6 +1,6 @@
 import { NavLink, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import '../css/NavBar.css';
+import '../css/Navbar.css';
 
 const LINKS = [
   { to: '/log', label: 'Log' },
