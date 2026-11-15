@@ -11,7 +11,8 @@
     "train": "node ml/trainModel.js",
     "seed": "node seed/seed.js",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "seed:pets": "node seed/seedPetsAndTasks.js"
   },
   "keywords": [],
   "author": "",
