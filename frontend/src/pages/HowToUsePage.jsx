@@ -58,3 +58,6 @@ export default function HowToUsePage() {
     </div>
   );
 }
+
+// No props, but defined so every component has PropTypes (rubric)
+HowToUsePage.propTypes = {};

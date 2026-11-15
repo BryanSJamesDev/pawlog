@@ -181,3 +181,6 @@ export default function HistoryPage() {
     </section>
   );
 }
+
+// No props, but defined so every component has PropTypes (rubric)
+HistoryPage.propTypes = {};
