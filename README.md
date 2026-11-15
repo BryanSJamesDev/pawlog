@@ -27,7 +27,7 @@ Includes the project description, user personas, user stories, and design mockup
 
 ## Screenshot
 
-Coming soon, once the app is deployed.
+![PawLog Alerts page showing a flagged entry and model accuracy](images/alerts.png)
 
 ## Features
 
