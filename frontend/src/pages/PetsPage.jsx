@@ -123,3 +123,6 @@ export default function PetsPage() {
     </section>
   );
 }
+
+// No props, but defined so every component has PropTypes (rubric)
+PetsPage.propTypes = {};

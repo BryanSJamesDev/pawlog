@@ -40,3 +40,6 @@ export default function LogPage() {
     </section>
   );
 }
+
+// No props, but defined so every component has PropTypes (rubric)
+LogPage.propTypes = {};

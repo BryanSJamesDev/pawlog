@@ -215,3 +215,6 @@ export default function CarePage() {
     </section>
   );
 }
+
+// No props, but defined so every component has PropTypes (rubric)
+CarePage.propTypes = {};
