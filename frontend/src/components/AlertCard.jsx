@@ -17,6 +17,11 @@ function round(value) {
   return Math.round(value * 10) / 10;
 }
 
+// "1 cup" instead of "1 cups"
+function unitLabel(value, unit) {
+  return value === 1 && unit === 'cups' ? 'cup' : unit;
+}
+
 export default function AlertCard({ alert, onFeedback, saving = false }) {
   const percent = Math.round(alert.predictedProbability * 100);
   const changes = describeChanges(alert, alert.usual);
@@ -67,10 +72,11 @@ export default function AlertCard({ alert, onFeedback, saving = false }) {
           >
             <dt>{field.label}</dt>
             <dd>
-              {alert[field.key]} {field.unit}
+              {alert[field.key]} {unitLabel(alert[field.key], field.unit)}
               {alert.usual && (
                 <span className="alert-usual">
-                  usual {round(alert.usual[field.key])} {field.unit}
+                  usual {round(alert.usual[field.key])}{' '}
+                  {unitLabel(round(alert.usual[field.key]), field.unit)}
                 </span>
               )}
             </dd>
