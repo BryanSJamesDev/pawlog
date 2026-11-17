@@ -59,3 +59,10 @@ select {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Phones and small screens */
+@media (max-width: 600px) {
+  .app-main {
+    padding: 1rem;
+  }
+}
