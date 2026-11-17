@@ -139,10 +139,3 @@
     white-space: nowrap;
   }
 }
-
-/* Hide the username on phones so the logo and Log out share one row */
-@media (max-width: 600px) {
-  .navbar-user span {
-    display: none;
-  }
-}
