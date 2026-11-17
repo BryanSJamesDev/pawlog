@@ -84,3 +84,23 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Phones and small screens */
+@media (max-width: 600px) {
+  .entry-form {
+    padding: 1.25rem;
+  }
+
+  .entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .entry-field {
+    min-width: 0;
+  }
+
+  .entry-field input,
+  .entry-field select {
+    width: 100%;
+  }
+}
