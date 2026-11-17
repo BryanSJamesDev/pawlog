@@ -32,6 +32,9 @@ Includes the project description, user personas, user stories, and design mockup
 ## Live Site
 ![PawLog](https://pawlog-c6n1.onrender.com/)
 
+## YouTube Link
+Please see our walk-through of our website at the following YouTube Link:
+![YouTube](https://www.youtube.com/watch?v=oe3iXFpLbGs)
 ## Features
 
 - **Daily health log:** create, edit, delete, and filter entries by pet, date range, and symptom
