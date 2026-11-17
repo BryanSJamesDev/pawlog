@@ -29,6 +29,9 @@ Includes the project description, user personas, user stories, and design mockup
 
 ![PawLog Alerts page showing a flagged entry and model accuracy](images/alerts.png)
 
+## Live Site
+![PawLog](https://pawlog-c6n1.onrender.com/)
+
 ## Features
 
 - **Daily health log:** create, edit, delete, and filter entries by pet, date range, and symptom
