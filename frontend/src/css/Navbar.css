@@ -125,3 +125,17 @@
     font-size: 0.9rem;
   }
 }
+
+/* Keep all nav links on one row on phones */
+@media (max-width: 600px) {
+  .navbar-links {
+    flex-wrap: nowrap;
+    gap: 0.1rem;
+  }
+
+  .navbar-links a {
+    padding: 0.4rem 0.45rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+}
