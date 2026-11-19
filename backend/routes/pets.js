@@ -14,7 +14,7 @@ router.use(requireLogin);
 
 const SPECIES = ['dog', 'cat', 'bird', 'rabbit', 'other'];
 
-function cleanPet(body) {
+fcleanPet(req.body ?? {}) {
   const errors = [];
   const name = String(body.name ?? '').trim();
   const species = String(body.species ?? '').toLowerCase();
